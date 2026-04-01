@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>...</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { height: 100%; overflow-y: scroll; -webkit-overflow-scrolling: touch; }
+  body {
+    background: #0a0a0a;
+    color: #c8c8c8;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100%;
+    position: relative;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  @keyframes glitch {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(-2px); }
+    40% { transform: translateX(2px); }
+    60% { transform: translateX(-1px); }
+    80% { transform: translateX(1px); }
+    100% { transform: translateX(0); }
+  }
+  @keyframes pulseCorrect {
+    0% { border-color: #333; }
+    30% { border-color: #4a7a4a; }
+    100% { border-color: #333; }
+  }
+  @keyframes pulseDot {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1); }
+  }
+  input::placeholder { color: #333; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #0a0a0a; }
+  ::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
+  input:focus { outline: none; border-color: #555 !important; }
+  button:active { opacity: 0.6; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
+var useState = React.useState, useEffect = React.useEffect, useRef = React.useRef, useCallback = React.useCallback;
+var e = React.createElement;
+
+// ============================================
+// THE GEOCACHE HUNT — "oh. you found it."
+// ============================================
+
+// --- STORAGE HELPERS ---
+var STORAGE_KEY = "geocache_hunt_state";
+
+function saveState(state) {
+  try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+function loadState() {
+  try {
+    var raw = sessionStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+
+function clearState() {
+  try { sessionStorage.removeItem(STORAGE_KEY); } catch(e) {}
+}
+
+// --- GAME DATA ---
+
+var GEOCACHES = {
+  rock: {
+    id: "rock", name: "rock",
+    reactions: {
+      first: ["...","you picked up a rock.","you picked up a rock and scanned it.","that's either very smart or very suspicious behavior."],
+      early: ["a rock. you found a rock.","most people would walk right past it. you didn't.","noted."],
+      late: ["oh, you found the rock.","it's been sitting there the whole time.","i was starting to wonder."]
+    },
+    puzzle: {
+      prompt: ["you picked up a rock in a yard full of them and somehow found the right one. speaking of finding things \u2014 you know who's bad at that? the united states military.","they've lost nuclear weapons. not retired. not destroyed. lost. they even have a cute name for it. 'broken arrow.'","how many are still missing?"],
+      validate: function(a) { var n = a.toLowerCase().trim(); return n === "6" || n === "six" || n === "half a dozen"; },
+      correctResponse: ["six. six nuclear weapons just... out there somewhere.","one's been in a swamp in north carolina since 1961. they put up a sign. a sign.","you're holding a fake rock in a backyard and now you know more than most adults. don't waste it."],
+      wrongResponse: function(a) {
+        var n = parseInt(a);
+        if (!isNaN(n) && n >= 1 && n <= 5) return ["higher. you're giving them too much credit."];
+        if (!isNaN(n) && n >= 10) return ["lower. but i respect that you assumed the worst immediately."];
+        if (!isNaN(n) && n >= 7 && n <= 9) return ["close. but no. try again."];
+        return ["it's a number. between 1 and 10.","and it's the wrong number of nuclear weapons to lose, which is any of them."];
+      },
+      hints: ["single digits. which is not the comfort it sounds like.","more than 4. less than 8. every single one of them is just... somewhere.","six. the answer is six. one is in a swamp. they put up a sign. we've been over this."]
+    }
+  },
+  pinecone: {
+    id: "pinecone", name: "pinecone",
+    reactions: {
+      first: ["a pinecone.","you started with a pinecone.","that's... actually kind of methodical. you looked down first.","noted."],
+      early: ["pinecone. sure.","nature's grenade, if you think about it.","don't think about it."],
+      late: ["this was just sitting there the whole time.","it's literally a pinecone.","this was a freebie and you took five detours to get here."]
+    },
+    puzzle: {
+      prompt: ["you know how old this pinecone is? neither do i. but i know something that's older than you think it is.","which is older \u2014 oxford university or the aztec empire?","before you answer, think about which one feels wrong. pick that one."],
+      validate: function(a) { return a.toLowerCase().trim().indexOf("oxford") !== -1; },
+      correctResponse: ["oxford. by three hundred years.","they were handing out degrees before the aztecs had a calendar.","everything you think you know about what's 'old' is probably off by a few centuries. just so you know."],
+      wrongResponse: ["no. and i told you to pick the one that felt wrong. try again."],
+      hints: ["i literally told you to pick the one that feels wrong.","one of these started in 1096. the other in 1428. i'll let you figure out which is which.","oxford. it's oxford. i tried to help you."]
+    }
+  },
+  mushroom: {
+    id: "mushroom", name: "mushroom",
+    reactions: {
+      first: ["the mushroom. interesting.","you know in video games mushrooms always do something.","this one doesn't. it's just a mushroom.","...or is it. no. it isn't. but you hesitated."],
+      early: ["ah, the mushroom.","i hid that one in plain sight because mushrooms already look like they don't belong anywhere.","nature's glitch in the matrix."],
+      late: ["you found the mushroom last-ish.","it was literally just sitting there. being a mushroom.","sometimes the things that are hardest to find are the ones that aren't hiding.","...that sounded deeper than i meant it."]
+    },
+    puzzle: {
+      prompt: ["you know what else hides underground and knows more than it should. ...don't answer that.","in undertale \u2014 the name screen \u2014 what happens if you type 'frisk'?"],
+      validate: function(a) { var l = a.toLowerCase().trim(); return l.indexOf("hard") !== -1 && (l.indexOf("mode") !== -1 || l.indexOf("difficult") !== -1 || l.length < 12); },
+      correctResponse: ["hard mode. you type the name you're not supposed to know yet and the game decides you need to be humbled.","that's the kind of thing toby fox does. hides a consequence inside a choice most people won't make.","you knew that though. i can tell."],
+      wrongResponse: ["no. think about what toby fox would do if he caught you knowing something early. he wouldn't ignore it."],
+      hints: ["frisk is the name you learn at the end. what happens when you use it at the beginning?","the game changes difficulty. guess which direction.","hard mode. the game activates hard mode. because of course it does."]
+    }
+  },
+  dogpoop: {
+    id: "dogpoop", name: "that",
+    reactions: {
+      first: ["...","you picked that up.","you saw it on the ground and your first instinct was to pick it up.","i'm going to remember this about you."],
+      early: ["oh no.","you actually \u2014 okay.","we're not going to dwell on this.","but i am taking notes."],
+      late: ["you found five other things first.","perfectly normal, interesting things.","and yet here you are. holding that.","i respect the commitment. i don't understand it. but i respect it."]
+    },
+    puzzle: {
+      prompt: ["you picked that up without hesitation. that level of commitment deserves a reward. here's something you'll never be able to un-know.","what animal poops cubes."],
+      validate: function(a) { return a.toLowerCase().trim().indexOf("wombat") !== -1; },
+      correctResponse: ["wombats. perfect cubes. like tiny dice made of regret.","someone got actual research funding to figure out why. a real person with a real degree wrote a paper about wombat poop geometry.","and now you know about it too. because you picked up fake dog poop in a backyard."],
+      wrongResponse: ["no. it's australian. because the answer to 'what animal does something inexplicable' is always australian."],
+      hints: ["marsupial. looks like a small angry potato.","it starts with w and the answer will follow you for the rest of your life.","wombat. the answer is wombat. you're never going to forget this. that's my gift to you."]
+    }
+  },
+  spider: {
+    id: "spider", name: "spider",
+    reactions: {
+      first: ["oh you went straight for the spider.","of course you did.","i put that one there specifically to see who'd grab it first.","and now i know."],
+      early: ["the spider.","interesting that you didn't flinch. or maybe you did and i'm being polite."],
+      late: ["finally.","the spider was feeling neglected.","it told me. spiders do that."]
+    },
+    puzzle: {
+      prompt: ["you grabbed a spider and didn't flinch. so let's talk about what actually kills things. because it's not spiders.","highest kill rate of any predator on earth. not biggest. not scariest. most successful. percentage of hunts that end in a catch.","what is it."],
+      validate: function(a) { var l = a.toLowerCase().trim(); return l.indexOf("dragonfl") !== -1 || l.indexOf("dragon fl") !== -1; },
+      correctResponse: ["dragonfly. 95 percent.","lions are at 25. your cat is honestly better than a lion.","the most lethal hunter on the planet weighs less than a paperclip and you've been waving it away from your face your entire life."],
+      wrongResponse: function(a) {
+        var l = a.toLowerCase().trim();
+        var big = ["lion","shark","cheetah","wolf","eagle","bear","tiger","orca","crocodile","croc","hawk","falcon","spider","snake","leopard","jaguar","panther","great white"];
+        for (var i = 0; i < big.length; i++) { if (l.indexOf(big[i]) !== -1) return ["no. you're thinking like someone who watches nature documentaries.","the real answer is something you've ignored near every pond you've ever been to."]; }
+        return ["no. smaller. way smaller. embarrassingly smaller."];
+      },
+      hints: ["it flies. it's an insect. it's been right in front of you a hundred times.","you've seen them near water. they look like tiny helicopters. they are killing machines.","dragonfly. 95 percent kill rate. the perfect predator has been vibing near your local pond this whole time."]
+    }
+  },
+  frog: {
+    id: "frog", name: "frog",
+    reactions: {
+      first: ["the frog.","you started with the frog.","it's judging you. i'm judging you. we're all judging you.","...kidding. mostly."],
+      early: ["the frog.","look at its face. it knows something you don't.","well. it did. now you're about to know it too."],
+      late: ["the frog.","look at its face. it knows what it did."]
+    },
+    puzzle: {
+      prompt: ["you picked up a frog. it didn't try to stop you. that was its choice.","here's something that's going to break your brain a little.","52 cards. a normal deck. shuffled.","which is bigger \u2014 the number of ways those cards could be arranged, or the number of atoms on earth?"],
+      validate: function(a) { var l = a.toLowerCase().trim(); return l.indexOf("card") !== -1 || l.indexOf("deck") !== -1 || l.indexOf("shuffle") !== -1 || l.indexOf("arrange") !== -1 || l.indexOf("52") !== -1 || l.indexOf("factorial") !== -1; },
+      correctResponse: ["the cards. and it's not even a little bit close.","every time anyone has ever shuffled a deck of cards, they almost certainly created an arrangement that has never existed before. not once. in the entire history of the universe.","52 cards. that's all it takes to outnumber the atoms on earth."],
+      wrongResponse: ["no. think about it. there are a lot of atoms. but a deck of cards is weirder than you think.","try again."],
+      hints: ["one of these numbers has about 50 digits. the other has 68. i'll let you figure out which is which.","every shuffle is probably unique. every single one. ever. that should tell you something.","cards. it's always the cards. the universe is big but a deck of cards is bigger. mathematically. i don't make the rules."]
+    }
+  }
+};
+
+var INTRO = ["oh.","you found it.","...that wasn't supposed to happen yet.","okay. okay. fine.","so here's the situation. there are six objects hidden in this yard that belong to me.","they're not easter eggs. don't call them easter eggs.","i need them back.","each one has a tag on it. when you find one, tap it like you tapped this one.","i'll know which one you found. and i'll need you to do something for me before we move on.","think of it as... proof that you're paying attention.","find all six. do what i ask. and i'll make it worth your time.","...go."];
+var CLOTHES = ["this isn't part of the game. i just want to know.","which one of you has gone the longest without changing clothes. don't answer. just look at each other.","...that was fast. and unanimous. wow."];
+var COMPLETE = {
+  noHints: ["...","you did all six.","without asking for help.","i don't \u2014 that doesn't happen. people always ask.","okay. i underestimated you. that's not easy for me to say.","go find the person who sent you out here. they have something for you.","you earned it. don't make it weird."],
+  someHints: ["...","all six. done.","you needed a little help. that's fine. asking for help is actually \u2014","no. i'm not going to give you a life lesson. you did the thing.","go find the person who sent you out here. they have something for you.","go get it before i change my mind."],
+  manyHints: ["...","technically, you finished.","with... a lot of help. from me. which i provided. generously.","look, the point isn't how you got here. the point is you kept going.","go find the person who sent you out here. they have something for you.","you're welcome."]
+};
+var QUIPS = {
+  2:["two down. you're either fast or lucky.","i haven't decided which yet."],
+  3:["halfway.","you're actually doing this."],
+  4:["four. two left.","you're more persistent than i expected. that's not an insult. probably."],
+  5:["one more.","i'm... almost going to miss this.","almost."]
+};
+var WRONGROCK = [
+  ["...that's a rock. it's not the right rock. but you tried."],
+  ["another rock. still wrong. you're very committed to this."],
+  ["at this point you're just picking up rocks as a hobby. which \u2014 honestly, respect."],
+  ["still wrong. there are a finite number of rocks out here. you'll get there."]
+];
+
+var RETURN_LINES = [
+  "you're back.",
+  "where were we. right."
+];
+
+var geocacheKeys = Object.keys(GEOCACHES);
+
+// Check if launched from NFC (has ?find= param)
+var launchedFromNFC = (new URLSearchParams(window.location.search)).has("find");
+
+function App() {
+  // Load saved state
+  var saved = loadState();
+
+  var gs = useState(saved ? saved.gameState : "intro");
+  var gameState = gs[0], setGameState = gs[1];
+  var dl = useState(saved ? saved.displayedLines : []);
+  var displayedLines = dl[0], setDisplayedLines = dl[1];
+  var fg = useState(saved ? saved.foundGeocaches : []);
+  var foundGeocaches = fg[0], setFoundGeocaches = fg[1];
+  var sp = useState(saved ? saved.solvedPuzzles : []);
+  var solvedPuzzles = sp[0], setSolvedPuzzles = sp[1];
+  var cp = useState(null);
+  var currentPuzzle = cp[0], setCurrentPuzzle = cp[1];
+  var hu = useState(saved ? saved.hintsUsed : {});
+  var hintsUsed = hu[0], setHintsUsed = hu[1];
+  var th = useState(saved ? saved.totalHints : 0);
+  var totalHints = th[0], setTotalHints = th[1];
+  var iv = useState("");
+  var inputValue = iv[0], setInputValue = iv[1];
+  var it = useState(false);
+  var isTyping = it[0], setIsTyping = it[1];
+  var si = useState(false);
+  var showInput = si[0], setShowInput = si[1];
+  var sh = useState(false);
+  var showHintBtn = sh[0], setShowHintBtn = sh[1];
+  var ss = useState(false);
+  var showScanPrompt = ss[0], setShowScanPrompt = ss[1];
+  var sn = useState(false);
+  var showNfcSim = sn[0], setShowNfcSim = sn[1];
+  var ca = useState(saved ? saved.clothesDone : false);
+  var clothesDone = ca[0], setClothesDone = ca[1];
+  var wr = useState(saved ? saved.wrongRocks : 0);
+  var wrongRocks = wr[0], setWrongRocks = wr[1];
+  var initDone = useRef(false);
+  var pendingFind = useRef(null);
+  var bottomRef = useRef(null);
+  var gameStateRef = useRef(gameState);
+  var foundRef = useRef(foundGeocaches);
+  var solvedRef = useRef(solvedPuzzles);
+  var typingRef = useRef(false);
+
+  useEffect(function() { gameStateRef.current = gameState; }, [gameState]);
+  useEffect(function() { foundRef.current = foundGeocaches; }, [foundGeocaches]);
+  useEffect(function() { solvedRef.current = solvedPuzzles; }, [solvedPuzzles]);
+  useEffect(function() { typingRef.current = isTyping; }, [isTyping]);
+
+  // Persist state on changes
+  useEffect(function() {
+    if (gameState === "complete" || gameState === "intro") return;
+    saveState({
+      gameState: gameState === "puzzle" ? "exploring" : gameState, // Don't save mid-puzzle
+      displayedLines: displayedLines,
+      foundGeocaches: foundGeocaches,
+      solvedPuzzles: solvedPuzzles,
+      hintsUsed: hintsUsed,
+      totalHints: totalHints,
+      clothesDone: clothesDone,
+      wrongRocks: wrongRocks
+    });
+  }, [gameState, displayedLines, foundGeocaches, solvedPuzzles, hintsUsed, totalHints, clothesDone, wrongRocks]);
+
+  useEffect(function() {
+    if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior: "smooth" });
+  }, [displayedLines, showInput, showScanPrompt]);
+
+  var displayLines = useCallback(function(lines, onComplete) {
+    if (!lines || lines.length === 0) { if (onComplete) onComplete(); return; }
+    var i = 0;
+    setIsTyping(true);
+    function showNext() {
+      if (i < lines.length) {
+        var cur = lines[i] || "";
+        setDisplayedLines(function(p) { return p.concat([cur]); });
+        i++;
+        var prev = lines[i-1] || "";
+        var delay = prev === "..." ? 800 : prev.length < 10 ? 400 : 600;
+        setTimeout(showNext, delay);
+      } else {
+        setIsTyping(false);
+        if (onComplete) onComplete();
+      }
+    }
+    showNext();
+  }, []);
+
+  // Init
+  useEffect(function() {
+    if (initDone.current) return;
+    initDone.current = true;
+
+    var params = new URLSearchParams(window.location.search);
+    var find = params.get("find");
+    // Clear URL param immediately
+    if (find) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+
+    if (saved && saved.gameState !== "intro") {
+      // Returning player — skip intro
+      if (find) {
+        // They scanned something new
+        setDisplayedLines(function(p) { return p.concat(["---"]); });
+        displayLines(RETURN_LINES, function() {
+          setGameState("exploring");
+          setShowScanPrompt(true);
+          setShowNfcSim(true);
+          setTimeout(function() { triggerFind(find.toLowerCase()); }, 400);
+        });
+      } else {
+        // Just reopened the app
+        setGameState("exploring");
+        setTimeout(function() {
+          setDisplayedLines(function(p) { return p.concat(["---"]); });
+          displayLines(["...you're still here. good."], function() {
+            setShowScanPrompt(true);
+            setShowNfcSim(true);
+          });
+        }, 500);
+      }
+    } else {
+      // Fresh start
+      if (find) pendingFind.current = find.toLowerCase();
+      setTimeout(function() {
+        displayLines(INTRO, function() {
+          setGameState("exploring");
+          setShowScanPrompt(true);
+          setShowNfcSim(true);
+          if (pendingFind.current) {
+            var id = pendingFind.current;
+            pendingFind.current = null;
+            setTimeout(function() { triggerFind(id); }, 600);
+          }
+        });
+      }, 800);
+    }
+  }, []);
+
+  // Listen for subsequent NFC scans via focus event
+  useEffect(function() {
+    function handleFocus() {
+      var params = new URLSearchParams(window.location.search);
+      var find = params.get("find");
+      if (find) {
+        window.history.replaceState({}, "", window.location.pathname);
+        if (gameStateRef.current === "exploring" && !typingRef.current) {
+          triggerFind(find.toLowerCase());
+        } else {
+          // Queue it — they scanned while busy
+          pendingFind.current = find.toLowerCase();
+        }
+      }
+    }
+    // Also listen for pageshow (iOS sometimes uses bfcache)
+    function handlePageShow(ev) {
+      if (ev.persisted) handleFocus();
+    }
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("pageshow", handlePageShow);
+    return function() {
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("pageshow", handlePageShow);
+    };
+  }, []);
+
+  function triggerFind(id) {
+    setShowScanPrompt(false);
+    setShowNfcSim(false);
+    if (id === "wrongrock") {
+      handleWrongRock();
+    } else if (GEOCACHES[id]) {
+      discoverGeocache(id);
+    }
+  }
+
+  function handleWrongRock() {
+    var idx = Math.min(wrongRocks, WRONGROCK.length - 1);
+    setWrongRocks(function(p) { return p + 1; });
+    setDisplayedLines(function(p) { return p.concat(["---"]); });
+    displayLines(WRONGROCK[idx], function() {
+      setShowScanPrompt(true);
+      setShowNfcSim(true);
+    });
+  }
+
+  function maybeClothes(solvedCount, cb) {
+    if (!clothesDone && solvedCount === 3) {
+      setClothesDone(true);
+      setDisplayedLines(function(p) { return p.concat(["---"]); });
+      displayLines(CLOTHES, function() {
+        setTimeout(cb, 800);
+      });
+      return;
+    }
+    // Progress quips
+    if (QUIPS[solvedCount]) {
+      setDisplayedLines(function(p) { return p.concat(["---"]); });
+      displayLines(QUIPS[solvedCount], function() { setTimeout(cb, 400); });
+      return;
+    }
+    cb();
+  }
+
+  function discoverGeocache(geocacheId) {
+    var gc = GEOCACHES[geocacheId];
+    if (!gc) return;
+
+    // Already solved — just tell them
+    if (solvedRef.current.indexOf(geocacheId) !== -1) {
+      setDisplayedLines(function(p) { return p.concat(["---"]); });
+      displayLines(["you already did this one. i remember even if you don't."], function() {
+        setShowScanPrompt(true);
+        setShowNfcSim(true);
+      });
+      return;
+    }
+
+    // Already found but not solved — resume puzzle
+    if (foundRef.current.indexOf(geocacheId) !== -1) {
+      setDisplayedLines(function(p) { return p.concat(["---"]); });
+      displayLines(["we were in the middle of this one. let me ask again."], function() {
+        setCurrentPuzzle(geocacheId);
+        setGameState("puzzle");
+        displayLines(gc.puzzle.prompt, function() {
+          setShowInput(true);
+          setShowHintBtn(true);
+        });
+      });
+      return;
+    }
+
+    // New discovery
+    setFoundGeocaches(function(p) { return p.concat([geocacheId]); });
+    var foundCount = foundRef.current.length; // Before this one
+    var reactionType = foundCount === 0 ? "first" : foundCount < 3 ? "early" : "late";
+    var reactions = gc.reactions[reactionType];
+
+    setDisplayedLines(function(p) { return p.concat(["---"]); });
+    displayLines(reactions, function() {
+      setTimeout(function() {
+        setCurrentPuzzle(geocacheId);
+        setGameState("puzzle");
+        displayLines(gc.puzzle.prompt, function() {
+          setShowInput(true);
+          setShowHintBtn(true);
+        });
+      }, 600);
+    });
+  }
+
+  function submitAnswer() {
+    if (!currentPuzzle || !inputValue.trim()) return;
+    var gc = GEOCACHES[currentPuzzle];
+    var puzzle = gc.puzzle;
+    var answer = inputValue.trim();
+    setInputValue("");
+    setShowInput(false);
+    setShowHintBtn(false);
+    setDisplayedLines(function(p) { return p.concat(["> " + answer]); });
+
+    if (puzzle.validate(answer)) {
+      var resp = Array.isArray(puzzle.correctResponse) ? puzzle.correctResponse : [puzzle.correctResponse];
+      setTimeout(function() {
+        displayLines(resp, function() {
+          var newSolved = solvedRef.current.concat([currentPuzzle]);
+          setSolvedPuzzles(newSolved);
+          setCurrentPuzzle(null);
+          if (newSolved.length === 6) {
+            setTimeout(function() { completeGame(); }, 1000);
+          } else {
+            maybeClothes(newSolved.length, function() {
+              setGameState("exploring");
+              setTimeout(function() {
+                setShowScanPrompt(true);
+                setShowNfcSim(true);
+                // Check for queued NFC scan
+                if (pendingFind.current) {
+                  var id = pendingFind.current;
+                  pendingFind.current = null;
+                  setTimeout(function() { triggerFind(id); }, 400);
+                }
+              }, 600);
+            });
+          }
+        });
+      }, 500);
+    } else {
+      var wr;
+      if (typeof puzzle.wrongResponse === "function") wr = puzzle.wrongResponse(answer);
+      else if (Array.isArray(puzzle.wrongResponse)) wr = puzzle.wrongResponse;
+      else wr = [puzzle.wrongResponse];
+      setTimeout(function() {
+        displayLines(wr, function() {
+          setShowInput(true);
+          setShowHintBtn(true);
+        });
+      }, 400);
+    }
+  }
+
+  function requestHint() {
+    if (!currentPuzzle) return;
+    var gc = GEOCACHES[currentPuzzle];
+    var count = hintsUsed[currentPuzzle] || 0;
+    var hints = gc.puzzle.hints;
+    if (count >= hints.length) return;
+    var text = hints[count];
+    setHintsUsed(function(p) { var n = {}; for (var k in p) n[k] = p[k]; n[currentPuzzle] = count + 1; return n; });
+    setTotalHints(function(p) { return p + 1; });
+    setShowInput(false);
+    setShowHintBtn(false);
+    var prefix = count === 0 ? ["...fine."] : count === 1 ? ["this is the part where i try not to be judgmental."] : ["we're not going to talk about how many times you've asked."];
+    displayLines(prefix.concat([text]), function() {
+      setShowInput(true);
+      if (count + 1 < hints.length) setShowHintBtn(true);
+    });
+  }
+
+  function completeGame() {
+    clearState(); // Clear saved state on completion
+    var msgs = totalHints === 0 ? COMPLETE.noHints : totalHints <= 3 ? COMPLETE.someHints : COMPLETE.manyHints;
+    setDisplayedLines(function(p) { return p.concat(["---"]); });
+    displayLines(msgs, function() { setGameState("complete"); });
+  }
+
+  var available = geocacheKeys.filter(function(id) { return solvedPuzzles.indexOf(id) === -1; });
+
+  // --- RENDER ---
+  return e("div", {
+    style: {
+      minHeight: "100vh",
+      minHeight: "100dvh",
+      backgroundColor: "#0a0a0a",
+      color: "#c8c8c8",
+      fontFamily: "'Courier New', Courier, monospace",
+      fontSize: "15px",
+      lineHeight: "1.6",
+      padding: "20px 16px",
+      maxWidth: "100%",
+      boxSizing: "border-box",
+      position: "relative"
+    }
+  },
+    // Lines
+    e("div", { style: { paddingBottom: "20px" } },
+      displayedLines.map(function(line, i) {
+        if (line === null || line === undefined) return null;
+        if (line === "---") return e("hr", { key: "l"+i, style: { border: "none", borderTop: "1px solid #1a1a1a", margin: "24px 0" } });
+        if (typeof line === "string" && line.indexOf("> ") === 0) {
+          return e("p", { key: "l"+i, style: { margin: 0, padding: "2px 0", opacity: 0, animation: "fadeIn 0.4s ease forwards", color: "#555", fontSize: "14px" } }, line);
+        }
+        return e("p", { key: "l"+i, style: { margin: 0, padding: "2px 0", opacity: 0, animation: "fadeIn 0.4s ease forwards" } }, line);
+      }),
+      isTyping ? e("span", {
+        style: {
+          display: "inline-block",
+          width: "8px",
+          height: "15px",
+          backgroundColor: "#c8c8c8",
+          marginLeft: "2px",
+          marginTop: "4px",
+          animation: "blink 1s step-end infinite"
+        }
+      }) : null
+    ),
+
+    // Input area
+    showInput && !isTyping && gameState === "puzzle" ? e("div", {
+      style: { marginTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }
+    },
+      e("input", {
+        style: {
+          backgroundColor: "#111",
+          border: "1px solid #333",
+          color: "#c8c8c8",
+          fontFamily: "'Courier New', Courier, monospace",
+          fontSize: "16px", // 16px prevents iOS zoom
+          padding: "12px",
+          borderRadius: 0,
+          outline: "none",
+          width: "100%",
+          boxSizing: "border-box",
+          WebkitAppearance: "none"
+        },
+        type: "text",
+        value: inputValue,
+        onChange: function(ev) { setInputValue(ev.target.value); },
+        onKeyDown: function(ev) { if (ev.key === "Enter") submitAnswer(); },
+        placeholder: "...",
+        autoFocus: true,
+        autoComplete: "off",
+        autoCapitalize: "off",
+        spellCheck: false
+      }),
+      e("div", { style: { display: "flex", gap: "12px", alignItems: "center" } },
+        e("button", {
+          style: {
+            backgroundColor: "transparent",
+            border: "1px solid #444",
+            color: "#888",
+            fontFamily: "'Courier New', Courier, monospace",
+            fontSize: "13px",
+            padding: "10px 20px",
+            cursor: "pointer"
+          },
+          onClick: submitAnswer
+        }, "submit"),
+        showHintBtn ? e("button", {
+          style: {
+            backgroundColor: "transparent",
+            border: "1px solid #2a2a2a",
+            color: "#444",
+            fontFamily: "'Courier New', Courier, monospace",
+            fontSize: "12px",
+            padding: "8px 14px",
+            cursor: "pointer"
+          },
+          onClick: requestHint
+        }, "i need help") : null
+      )
+    ) : null,
+
+    // Scan prompt
+    showScanPrompt && !isTyping && gameState === "exploring" ? e("p", {
+      style: {
+        color: "#333",
+        fontSize: "13px",
+        marginTop: "30px",
+        fontStyle: "italic",
+        animation: "fadeIn 0.6s ease forwards",
+        opacity: 0
+      }
+    }, available.length > 0 ? "find something. tap it." : null) : null,
+
+    // NFC simulation (hidden when launched from real NFC)
+    !launchedFromNFC && showNfcSim && !isTyping && gameState === "exploring" ? e("div", {
+      style: {
+        marginTop: "24px",
+        padding: "12px",
+        border: "1px solid #1a1a1a",
+        backgroundColor: "#0d0d0d"
+      }
+    },
+      e("p", {
+        style: { color: "#2a2a2a", fontSize: "11px", margin: "0 0 8px 0", textTransform: "uppercase", letterSpacing: "2px" }
+      }, "sim"),
+      e("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px" } },
+        ["wrongrock"].concat(available).map(function(id) {
+          return e("button", {
+            key: id,
+            style: {
+              backgroundColor: "transparent",
+              border: "1px solid " + (solvedPuzzles.indexOf(id) !== -1 ? "#151515" : "#2a2a2a"),
+              color: solvedPuzzles.indexOf(id) !== -1 ? "#2a2a2a" : id === "wrongrock" ? "#664444" : "#555",
+              fontFamily: "'Courier New', Courier, monospace",
+              fontSize: "12px",
+              padding: "6px 12px",
+              cursor: "pointer"
+            },
+            onClick: function() { setInputValue(""); triggerFind(id); },
+            disabled: id !== "wrongrock" && solvedPuzzles.indexOf(id) !== -1
+          }, id === "wrongrock" ? "wrong rock" : id);
+        })
+      )
+    ) : null,
+
+    // Progress dots
+    e("div", {
+      style: {
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        display: "flex",
+        justifyContent: "center",
+        gap: "12px",
+        padding: "14px 12px",
+        paddingBottom: "max(14px, env(safe-area-inset-bottom))",
+        backgroundColor: "#0a0a0aee",
+        borderTop: "1px solid #111"
+      }
+    },
+      geocacheKeys.map(function(id) {
+        var solved = solvedPuzzles.indexOf(id) !== -1;
+        var found = foundGeocaches.indexOf(id) !== -1;
+        return e("div", {
+          key: id,
+          style: {
+            width: "8px",
+            height: "8px",
+            borderRadius: "50%",
+            backgroundColor: solved ? "#c8c8c8" : found ? "#444" : "#1a1a1a",
+            transition: "all 0.4s ease",
+            animation: solved ? "pulseDot 0.6s ease" : "none"
+          }
+        });
+      })
+    ),
+
+    e("div", { ref: bottomRef, style: { height: "80px" } })
+  );
+}
+
+ReactDOM.render(e(App), document.getElementById("root"));
+</script>
+</body>
+</html>
