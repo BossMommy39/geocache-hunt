@@ -57,6 +57,14 @@
     0%, 100% { opacity: 0.3; }
     50% { opacity: 0.6; }
   }
+  @keyframes glitchText {
+    0%   { transform: translateX(0);   opacity: 1; }
+    20%  { transform: translateX(-3px); opacity: 0.8; }
+    40%  { transform: translateX(2px);  opacity: 0.9; }
+    60%  { transform: translateX(-1px); opacity: 0.7; }
+    80%  { transform: translateX(3px);  opacity: 0.85; }
+    100% { transform: translateX(0);   opacity: 1; }
+  }
   input::placeholder { color: #333; }
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: #0a0a0a; }
@@ -76,6 +84,9 @@ var e = React.createElement;
 // ============================================
 // THE GEOCACHE HUNT — "oh. you found it."
 // ============================================
+
+// Glitch line prefix — detected in render for special styling, stripped for display
+var GP = "||G||";
 
 // --- STORAGE ---
 var STORAGE_KEY = "geocache_hunt_state";
@@ -189,19 +200,38 @@ var GEOCACHES = {
   }
 };
 
-var INTRO = ["oh.","you found it.","...that wasn't supposed to happen yet.","okay. okay. fine.","so here's the situation. there are six objects hidden in this yard that belong to me.","they're not easter eggs. don't call them easter eggs.","i need them back.","each one has a tag on it. when you find one, tap it like you tapped this one.","i'll know which one you found. and i'll need you to do something for me before we move on.","think of it as... proof that you're paying attention.","find all six. do what i ask. and i'll make it worth your time.","...go."];
-var CLOTHES = ["this isn't part of the game. i just want to know.","which one of you has gone the longest without changing clothes. don't answer. just look at each other.","...that was fast. and unanimous. wow."];
+// 5-line intro (change 2)
+var INTRO = [
+  "oh. you found it.",
+  "there are six objects in this yard. they're not easter eggs.",
+  "find one. tap it. i'll know.",
+  "do what i ask and i'll make it worth your time.",
+  "go."
+];
+
+// Clothes with Moment 1 addendum (change 5)
+var CLOTHES = [
+  "this isn't part of the game. i just want to know.",
+  "which one of you has gone the longest without changing clothes. don't answer. just look at each other.",
+  "...that was fast. and unanimous. wow.",
+  "that one wasn't mine, by the way. it was already in here when i showed up."
+];
+
 var COMPLETE = {
   noHints: ["...","you did all six.","without asking for help.","i don't \u2014 that doesn't happen. people always ask.","okay. i underestimated you. that's not easy for me to say.","go find the person who sent you out here. they have something for you.","you earned it. don't make it weird."],
   someHints: ["...","all six. done.","you needed a little help. that's fine. asking for help is actually \u2014","no. i'm not going to give you a life lesson. you did the thing.","go find the person who sent you out here. they have something for you.","go get it before i change my mind."],
   manyHints: ["...","technically, you finished.","with... a lot of help. from me. which i provided. generously.","look, the point isn't how you got here. the point is you kept going.","go find the person who sent you out here. they have something for you.","you're welcome."]
 };
+
+// Quips with group-aware moments (change 7)
 var QUIPS = {
-  2:["two down. you're either fast or lucky.","i haven't decided which yet."],
-  3:["halfway.","you're actually doing this."],
-  4:["four. two left.","you're more persistent than i expected. that's not an insult. probably."],
-  5:["one more.","i'm... almost going to miss this.","almost."]
+  1: ["how many of you are reading this right now. ...yeah. that's too many. one of you should be looking for the next one."],
+  2: ["two down. you're either fast or lucky.","i haven't decided which yet."],
+  3: ["halfway.","you're actually doing this."],
+  4: ["four. two left.","you're more persistent than i expected. that's not an insult. probably."],
+  5: ["one more.","i'm... almost going to miss this.","almost.","one of you knew that answer before the others. i could tell because you said it louder. you know who you are."]
 };
+
 var WRONGROCK = [
   ["...that's a rock. it's not the right rock. but you tried."],
   ["another rock. still wrong. you're very committed to this."],
@@ -209,7 +239,7 @@ var WRONGROCK = [
   ["still wrong. there are a finite number of rocks out here. you'll get there."]
 ];
 
-// --- IDLE LINES: the entity is alive between scans ---
+// --- IDLE LINES ---
 var IDLE_EARLY = [
   "still looking.",
   "take your time. i'm not going anywhere. literally.",
@@ -235,7 +265,7 @@ var IDLE_LATE = [
 var RETURN_LINES = ["you're back.","where were we. right."];
 var geocacheKeys = Object.keys(GEOCACHES);
 
-// --- SCANNER COMPONENT ---
+// --- SCANNER COMPONENT (unchanged) ---
 function Scanner(props) {
   var remaining = props.remaining;
   return e("div", {
@@ -246,13 +276,10 @@ function Scanner(props) {
       margin: "30px auto 10px auto"
     }
   },
-    // Pulse rings
     e("div", { style: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderRadius: "50%", border: "1px solid #1a1a1a", animation: "scanPulse 3s ease-out infinite" }}),
     e("div", { style: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderRadius: "50%", border: "1px solid #1a1a1a", animation: "scanPulse 3s ease-out 1s infinite" }}),
     e("div", { style: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderRadius: "50%", border: "1px solid #1a1a1a", animation: "scanPulse 3s ease-out 2s infinite" }}),
-    // Rotating ring
     e("div", { style: { position: "absolute", top: "15px", left: "15px", right: "15px", bottom: "15px", borderRadius: "50%", border: "1px dashed #222", animation: "scanRotate 12s linear infinite" }}),
-    // Center
     e("div", { style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center" }},
       e("div", { style: { fontSize: "22px", color: "#c8c8c8", fontFamily: "'Courier New', monospace", fontWeight: "bold", lineHeight: "1" } }, remaining),
       e("div", { style: { fontSize: "10px", color: "#444", fontFamily: "'Courier New', monospace", textTransform: "uppercase", letterSpacing: "2px", marginTop: "4px" } }, "remain")
@@ -264,6 +291,7 @@ function Scanner(props) {
 function App() {
   var saved = loadState();
 
+  // --- EXISTING STATE ---
   var gs = useState(saved ? saved.gameState : "intro");
   var gameState = gs[0], setGameState = gs[1];
   var dl = useState(saved ? saved.displayedLines : []);
@@ -295,6 +323,23 @@ function App() {
   var _il = useState(null);
   var idleLine = _il[0], setIdleLine = _il[1];
 
+  // --- NEW STATE ---
+  var _if = useState(false);
+  var isFlashing = _if[0], setIsFlashing = _if[1];
+  var _ib = useState(false);
+  var isBlackout = _ib[0], setIsBlackout = _ib[1];
+  var _gd = useState(saved ? !!saved.glitchDone : false);
+  var glitchDone = _gd[0], setGlitchDone = _gd[1];
+  var _cc = useState(saved ? !!saved.cheatingCaught : false);
+  var cheatingCaught = _cc[0], setCheatingCaught = _cc[1];
+  var _pn = useState(saved ? (saved.playerName || "") : "");
+  var playerName = _pn[0], setPlayerName = _pn[1];
+  var _nu = useState(saved ? !!saved.nameUsed : false);
+  var nameUsed = _nu[0], setNameUsed = _nu[1];
+  var _gl = useState(false);
+  var ghostLine = _gl[0], setGhostLine = _gl[1];
+
+  // --- REFS ---
   var initDone = useRef(false);
   var pendingFind = useRef(null);
   var bottomRef = useRef(null);
@@ -305,13 +350,35 @@ function App() {
   var idleTimer = useRef(null);
   var idleCount = useRef(0);
   var idleUsed = useRef([]);
+  var tabAwayRef = useRef(false);
+  var cheatingCaughtRef = useRef(cheatingCaught);
+  var glitchDoneRef = useRef(glitchDone);
+  var playerNameRef = useRef(playerName);
+  var nameUsedRef = useRef(nameUsed);
+  var stillHereTimer = useRef(null);
 
+  // --- SYNC REFS ---
   useEffect(function() { gameStateRef.current = gameState; }, [gameState]);
   useEffect(function() { foundRef.current = foundGeocaches; }, [foundGeocaches]);
   useEffect(function() { solvedRef.current = solvedPuzzles; }, [solvedPuzzles]);
   useEffect(function() { typingRef.current = isTyping; }, [isTyping]);
+  useEffect(function() { cheatingCaughtRef.current = cheatingCaught; }, [cheatingCaught]);
+  useEffect(function() { glitchDoneRef.current = glitchDone; }, [glitchDone]);
+  useEffect(function() { playerNameRef.current = playerName; }, [playerName]);
+  useEffect(function() { nameUsedRef.current = nameUsed; }, [nameUsed]);
 
-  // Persist
+  // --- TAB-AWAY DETECTION (change 6) ---
+  useEffect(function() {
+    function handleVisibility() {
+      if (document.hidden && gameStateRef.current === "puzzle") {
+        tabAwayRef.current = true;
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+    return function() { document.removeEventListener("visibilitychange", handleVisibility); };
+  }, []);
+
+  // --- PERSIST ---
   useEffect(function() {
     if (gameState === "complete" || gameState === "intro") return;
     saveState({
@@ -322,15 +389,19 @@ function App() {
       hintsUsed: hintsUsed,
       totalHints: totalHints,
       clothesDone: clothesDone,
-      wrongRocks: wrongRocks
+      wrongRocks: wrongRocks,
+      glitchDone: glitchDone,
+      cheatingCaught: cheatingCaught,
+      playerName: playerName,
+      nameUsed: nameUsed
     });
-  }, [gameState, displayedLines, foundGeocaches, solvedPuzzles, hintsUsed, totalHints, clothesDone, wrongRocks]);
+  }, [gameState, displayedLines, foundGeocaches, solvedPuzzles, hintsUsed, totalHints, clothesDone, wrongRocks, glitchDone, cheatingCaught, playerName, nameUsed]);
 
   useEffect(function() {
     if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior: "smooth" });
   }, [displayedLines, showInput, showExploring]);
 
-  // --- IDLE SYSTEM ---
+  // --- IDLE SYSTEM (unchanged) ---
   function startIdleTimer() {
     stopIdleTimer();
     idleCount.current = 0;
@@ -361,8 +432,10 @@ function App() {
     }, base + jitter);
   }
 
-  var displayLines = useCallback(function(lines, onComplete) {
+  // --- DISPLAY LINES (change 1: faster timing; opts.slow for correct responses) ---
+  var displayLines = useCallback(function(lines, onComplete, opts) {
     if (!lines || lines.length === 0) { if (onComplete) onComplete(); return; }
+    var slow = opts && opts.slow;
     var i = 0;
     setIsTyping(true);
     function showNext() {
@@ -370,7 +443,9 @@ function App() {
         setDisplayedLines(function(p) { return p.concat([lines[i] || ""]); });
         i++;
         var prev = lines[i-1] || "";
-        setTimeout(showNext, prev === "..." ? 800 : prev.length < 10 ? 400 : 600);
+        // Strip glitch prefix for timing calculation
+        var clean = typeof prev === "string" && prev.indexOf(GP) === 0 ? prev.slice(GP.length) : prev;
+        setTimeout(showNext, clean === "..." ? 500 : clean.length < 10 ? 250 : (slow ? 500 : 400));
       } else {
         setIsTyping(false);
         if (onComplete) onComplete();
@@ -391,13 +466,83 @@ function App() {
     stopIdleTimer();
   }
 
-  // Init
+  // --- CORRECT ANSWER FEEDBACK (change 4) ---
+  function triggerCorrectFeedback() {
+    try { navigator.vibrate([50, 30, 80]); } catch(ex) {}
+    setIsFlashing(true);
+    setTimeout(function() { setIsFlashing(false); }, 150);
+  }
+
+  // --- GLITCH SEQUENCE (change 5, Moment 2) ---
+  function triggerGlitch(onDone) {
+    setGlitchDone(true);
+    glitchDoneRef.current = true;
+
+    // Vibrate stutter pattern
+    try { navigator.vibrate([20, 50, 20, 50, 20, 100, 40]); } catch(ex) {}
+
+    // Low tone via Web Audio
+    try {
+      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = 80;
+      gain.gain.value = 0.15;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+      osc.stop(ctx.currentTime + 0.8);
+    } catch(ex) {}
+
+    // 1. Clear screen
+    setDisplayedLines([]);
+
+    // 2. After brief pause, show garbled lines
+    setTimeout(function() {
+      var glitchSeq = [
+        GP + "y\u0338ou f\u0336ound \u2014 n\u0337o. wait.",
+        GP + "r\u0336un.seq[0x44] \u2014 \u0305e\u0336r\u0337r\u0305o\u0336r\u0337 d\u0305e\u0336t\u0337ec\u0305ted",
+        GP + "\u0305\u0336\u0337[src.ann.v1] c\u0336o\u0337nnect\u0305 \u0336fa\u0337il\u0305ed",
+        GP + "\uD83C\uDF89 Great job! You're halfway there! Keep searching for more Easter fun! \uD83C\uDF89"
+      ];
+      displayLines(glitchSeq, function() {
+        // 3. Blackout for 2 seconds
+        setTimeout(function() {
+          setIsBlackout(true);
+          setTimeout(function() {
+            setIsBlackout(false);
+            // 4. Clear glitch lines, show recovery text
+            setDisplayedLines([]);
+            setTimeout(function() {
+              displayLines(
+                ["...no.", "that's not \u2014 ignore that. the old version is still in here somewhere.", "it's fine. keep going."],
+                function() {
+                  setTimeout(onDone, 600);
+                }
+              );
+            }, 200);
+          }, 2000);
+        }, 400);
+      });
+    }, 500);
+  }
+
+  // --- INIT ---
   useEffect(function() {
     if (initDone.current) return;
     initDone.current = true;
     var params = new URLSearchParams(window.location.search);
     var find = params.get("find");
-    if (find) window.history.replaceState({}, "", window.location.pathname);
+    var name = params.get("name");
+    if (find || name) window.history.replaceState({}, "", window.location.pathname);
+
+    // Store player name if provided and not already set (change 8)
+    if (name && !playerNameRef.current) {
+      setPlayerName(name);
+      playerNameRef.current = name;
+    }
 
     if (saved && saved.gameState !== "intro") {
       if (find) {
@@ -425,10 +570,13 @@ function App() {
         });
       }, 800);
     }
-    return function() { stopIdleTimer(); };
+    return function() {
+      stopIdleTimer();
+      if (stillHereTimer.current) clearTimeout(stillHereTimer.current);
+    };
   }, []);
 
-  // NFC listener
+  // --- NFC LISTENER (unchanged) ---
   useEffect(function() {
     function handleFocus() {
       var params = new URLSearchParams(window.location.search);
@@ -448,8 +596,10 @@ function App() {
     return function() { window.removeEventListener("focus", handleFocus); window.removeEventListener("pageshow", handlePageShow); };
   }, []);
 
+  // --- TRIGGER FIND (change 3: clear screen) ---
   function triggerFind(id) {
     leaveExploring();
+    setDisplayedLines([]); // Fresh screen for each geocache discovery
     if (id === "wrongrock") handleWrongRock();
     else if (GEOCACHES[id]) discoverGeocache(id);
   }
@@ -457,10 +607,10 @@ function App() {
   function handleWrongRock() {
     var idx = Math.min(wrongRocks, WRONGROCK.length - 1);
     setWrongRocks(function(p) { return p + 1; });
-    setDisplayedLines(function(p) { return p.concat(["---"]); });
     displayLines(WRONGROCK[idx], function() { enterExploring(); });
   }
 
+  // --- MAYBE CLOTHES (change 3: removed "---" on clothes, kept on quips for mid-screen separation) ---
   function maybeClothes(solvedCount, cb) {
     if (!clothesDone && solvedCount === 3) {
       setClothesDone(true);
@@ -476,27 +626,53 @@ function App() {
     cb();
   }
 
+  // --- DISCOVER GEOCACHE (changes 3, 8, 9) ---
   function discoverGeocache(geocacheId) {
     var gc = GEOCACHES[geocacheId];
     if (!gc) return;
+
     if (solvedRef.current.indexOf(geocacheId) !== -1) {
-      setDisplayedLines(function(p) { return p.concat(["---"]); });
       displayLines(["you already did this one. i remember even if you don't."], function() { enterExploring(); });
       return;
     }
     if (foundRef.current.indexOf(geocacheId) !== -1) {
-      setDisplayedLines(function(p) { return p.concat(["---"]); });
       displayLines(["we were in the middle of this one. let me ask again."], function() {
         setCurrentPuzzle(geocacheId); setGameState("puzzle");
         displayLines(gc.puzzle.prompt, function() { setShowInput(true); setShowHintBtn(true); });
       });
       return;
     }
+
     setFoundGeocaches(function(p) { return p.concat([geocacheId]); });
     var foundCount = foundRef.current.length;
     var reactionType = foundCount === 0 ? "first" : foundCount < 3 ? "early" : "late";
-    setDisplayedLines(function(p) { return p.concat(["---"]); });
-    displayLines(gc.reactions[reactionType], function() {
+
+    // Change 9: last geocache override (5 already solved = this is the 6th)
+    var isLastGeocache = solvedRef.current.length === 5;
+    if (isLastGeocache) {
+      displayLines(["so this is the last one."], function() {
+        setTimeout(function() {
+          displayLines(["let's make it count."], function() {
+            setTimeout(function() {
+              setCurrentPuzzle(geocacheId); setGameState("puzzle");
+              displayLines(gc.puzzle.prompt, function() { setShowInput(true); setShowHintBtn(true); });
+            }, 600);
+          });
+        }, 800);
+      });
+      return;
+    }
+
+    var reactLines = gc.reactions[reactionType].slice();
+
+    // Change 8: use player name once, first puzzle after glitch
+    if (glitchDoneRef.current && playerNameRef.current && !nameUsedRef.current) {
+      reactLines = reactLines.concat(["you're doing well, " + playerNameRef.current + "."]);
+      setNameUsed(true);
+      nameUsedRef.current = true;
+    }
+
+    displayLines(reactLines, function() {
       setTimeout(function() {
         setCurrentPuzzle(geocacheId); setGameState("puzzle");
         displayLines(gc.puzzle.prompt, function() { setShowInput(true); setShowHintBtn(true); });
@@ -504,6 +680,7 @@ function App() {
     });
   }
 
+  // --- SUBMIT ANSWER (changes 4, 6) ---
   function submitAnswer() {
     if (!currentPuzzle || !inputValue.trim()) return;
     var gc = GEOCACHES[currentPuzzle];
@@ -511,38 +688,79 @@ function App() {
     var answer = inputValue.trim();
     setInputValue(""); setShowInput(false); setShowHintBtn(false);
     setDisplayedLines(function(p) { return p.concat(["> " + answer]); });
-    if (puzzle.validate(answer)) {
-      var resp = Array.isArray(puzzle.correctResponse) ? puzzle.correctResponse : [puzzle.correctResponse];
+
+    // Change 6: tab-away cheating detection (fires once)
+    var wasCaught = tabAwayRef.current && !cheatingCaughtRef.current;
+    if (wasCaught) {
+      tabAwayRef.current = false;
+      setCheatingCaught(true);
+      cheatingCaughtRef.current = true;
+    }
+
+    function proceedWithAnswer() {
+      if (puzzle.validate(answer)) {
+        // Change 4: vibrate + flash on correct
+        triggerCorrectFeedback();
+        var resp = Array.isArray(puzzle.correctResponse) ? puzzle.correctResponse : [puzzle.correctResponse];
+        setTimeout(function() {
+          // Change 4: slower typing for correct responses (campfire moment)
+          displayLines(resp, function() {
+            var newSolved = solvedRef.current.concat([currentPuzzle]);
+            setSolvedPuzzles(newSolved);
+            setCurrentPuzzle(null);
+            if (newSolved.length === 6) {
+              setTimeout(function() { completeGame(); }, 1000);
+            } else {
+              maybeClothes(newSolved.length, function() {
+                // Change 5 Moment 2: glitch fires after 4th solve (once only)
+                if (newSolved.length === 4 && !glitchDoneRef.current) {
+                  triggerGlitch(function() {
+                    setDisplayedLines([]); // Change 3: clear before scanner
+                    enterExploring();
+                    if (pendingFind.current) {
+                      var pid = pendingFind.current;
+                      pendingFind.current = null;
+                      setTimeout(function() { triggerFind(pid); }, 400);
+                    }
+                  });
+                } else {
+                  setDisplayedLines([]); // Change 3: clear before scanner
+                  enterExploring();
+                  if (pendingFind.current) {
+                    var pid2 = pendingFind.current;
+                    pendingFind.current = null;
+                    setTimeout(function() { triggerFind(pid2); }, 400);
+                  }
+                }
+              });
+            }
+          }, { slow: true }); // Change 4: slow for correct response
+        }, 500);
+      } else {
+        // Wrong answer — append without clearing (mid-puzzle, change 3 exception)
+        var wrongResp;
+        if (typeof puzzle.wrongResponse === "function") wrongResp = puzzle.wrongResponse(answer);
+        else if (Array.isArray(puzzle.wrongResponse)) wrongResp = puzzle.wrongResponse;
+        else wrongResp = [puzzle.wrongResponse];
+        setTimeout(function() {
+          displayLines(wrongResp, function() { setShowInput(true); setShowHintBtn(true); });
+        }, 400);
+      }
+    }
+
+    // Inject cheating lines before normal response (change 6)
+    if (wasCaught) {
       setTimeout(function() {
-        displayLines(resp, function() {
-          var newSolved = solvedRef.current.concat([currentPuzzle]);
-          setSolvedPuzzles(newSolved);
-          setCurrentPuzzle(null);
-          if (newSolved.length === 6) {
-            setTimeout(function() { completeGame(); }, 1000);
-          } else {
-            maybeClothes(newSolved.length, function() {
-              enterExploring();
-              if (pendingFind.current) {
-                var id = pendingFind.current;
-                pendingFind.current = null;
-                setTimeout(function() { triggerFind(id); }, 400);
-              }
-            });
-          }
+        displayLines(["...you just looked that up, didn't you.", "i'm not mad. i'm just aware."], function() {
+          proceedWithAnswer();
         });
-      }, 500);
-    } else {
-      var wrongResp;
-      if (typeof puzzle.wrongResponse === "function") wrongResp = puzzle.wrongResponse(answer);
-      else if (Array.isArray(puzzle.wrongResponse)) wrongResp = puzzle.wrongResponse;
-      else wrongResp = [puzzle.wrongResponse];
-      setTimeout(function() {
-        displayLines(wrongResp, function() { setShowInput(true); setShowHintBtn(true); });
       }, 400);
+    } else {
+      proceedWithAnswer();
     }
   }
 
+  // --- REQUEST HINT (unchanged) ---
   function requestHint() {
     if (!currentPuzzle) return;
     var gc = GEOCACHES[currentPuzzle];
@@ -559,32 +777,84 @@ function App() {
     });
   }
 
+  // --- COMPLETE GAME (change 5 Moment 3) ---
   function completeGame() {
     clearState();
+    if (stillHereTimer.current) clearTimeout(stillHereTimer.current);
     var msgs = totalHints === 0 ? COMPLETE.noHints : totalHints <= 3 ? COMPLETE.someHints : COMPLETE.manyHints;
-    setDisplayedLines(function(p) { return p.concat(["---"]); });
-    displayLines(msgs, function() { setGameState("complete"); });
+    setDisplayedLines([]); // Change 3: fresh screen for completion
+    displayLines(msgs.concat(["if she asks about the voice, tell her everything worked perfectly."]), function() {
+      setGameState("complete");
+      // Change 5 Moment 3: ghost line after 60 seconds
+      stillHereTimer.current = setTimeout(function() {
+        setGhostLine(true);
+      }, 60000);
+    });
   }
 
   var remaining = 6 - solvedPuzzles.length;
 
+  // --- BLACKOUT (change 10) ---
+  if (isBlackout) {
+    return e("div", { style: { minHeight: "100vh", minHeight: "100dvh", backgroundColor: "#0a0a0a" } });
+  }
+
   // --- RENDER ---
   return e("div", {
-    style: { minHeight: "100vh", minHeight: "100dvh", backgroundColor: "#0a0a0a", color: "#c8c8c8", fontFamily: "'Courier New', Courier, monospace", fontSize: "15px", lineHeight: "1.6", padding: "20px 16px", maxWidth: "100%", boxSizing: "border-box", position: "relative" }
+    style: {
+      minHeight: "100vh",
+      minHeight: "100dvh",
+      // Change 4: flash effect via background-color transition
+      backgroundColor: isFlashing ? "#111" : "#0a0a0a",
+      transition: "background-color 0.15s ease",
+      color: "#c8c8c8",
+      fontFamily: "'Courier New', Courier, monospace",
+      fontSize: "15px",
+      lineHeight: "1.6",
+      padding: "20px 16px",
+      maxWidth: "100%",
+      boxSizing: "border-box",
+      position: "relative"
+    }
   },
-    // Text
+    // Text lines
     e("div", { style: { paddingBottom: "20px" } },
       displayedLines.map(function(line, i) {
         if (line === null || line === undefined) return null;
         if (line === "---") return e("hr", { key: "l"+i, style: { border: "none", borderTop: "1px solid #1a1a1a", margin: "24px 0" } });
-        if (typeof line === "string" && line.indexOf("> ") === 0)
-          return e("p", { key: "l"+i, style: { margin: 0, padding: "2px 0", opacity: 0, animation: "fadeIn 0.4s ease forwards", color: "#555", fontSize: "14px" } }, line);
-        return e("p", { key: "l"+i, style: { margin: 0, padding: "2px 0", opacity: 0, animation: "fadeIn 0.4s ease forwards" } }, line);
+
+        // Change 10: detect glitch prefix for special styling
+        var isGlitchLine = typeof line === "string" && line.indexOf(GP) === 0;
+        var text = isGlitchLine ? line.slice(GP.length) : line;
+
+        if (typeof text === "string" && text.indexOf("> ") === 0) {
+          return e("p", { key: "l"+i, style: { margin: 0, padding: "2px 0", opacity: 0, animation: "fadeIn 0.4s ease forwards", color: "#555", fontSize: "14px" } }, text);
+        }
+        return e("p", {
+          key: "l"+i,
+          style: {
+            margin: 0,
+            padding: "2px 0",
+            opacity: 0,
+            // Change 10: glitch lines get glitchText animation and reddish tint
+            animation: isGlitchLine
+              ? "glitchText 0.3s ease infinite, fadeIn 0.4s ease forwards"
+              : "fadeIn 0.4s ease forwards",
+            color: isGlitchLine ? "#884444" : undefined
+          }
+        }, text);
       }),
+
+      // Change 5 Moment 3: ghost line — dim, no animation, just exists
+      ghostLine ? e("p", {
+        key: "ghost",
+        style: { margin: 0, padding: "2px 0", color: "#333", opacity: 1 }
+      }, "you're still here.") : null,
+
       isTyping ? e("span", { style: { display: "inline-block", width: "8px", height: "15px", backgroundColor: "#c8c8c8", marginLeft: "2px", marginTop: "4px", animation: "blink 1s step-end infinite" } }) : null
     ),
 
-    // --- EXPLORING: Scanner + idle ---
+    // Scanner + idle (unchanged)
     showExploring && !isTyping && gameState === "exploring" && remaining > 0 ? e("div", {
       style: { opacity: 0, animation: "fadeIn 0.6s ease 0.3s forwards" }
     },
@@ -597,7 +867,7 @@ function App() {
       }, "scanning")
     ) : null,
 
-    // --- PUZZLE INPUT ---
+    // Puzzle input (unchanged)
     showInput && !isTyping && gameState === "puzzle" ? e("div", {
       style: { marginTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }
     },
@@ -620,7 +890,7 @@ function App() {
       )
     ) : null,
 
-    // --- PROGRESS DOTS ---
+    // Progress dots (unchanged)
     e("div", {
       style: { position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", justifyContent: "center", gap: "12px", padding: "14px 12px", paddingBottom: "max(14px, env(safe-area-inset-bottom))", backgroundColor: "#0a0a0aee", borderTop: "1px solid #111" }
     },
