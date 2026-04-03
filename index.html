@@ -36,7 +36,7 @@ var useState=React.useState,useEffect=React.useEffect,useRef=React.useRef,useCal
 var e=React.createElement;
 
 // STORAGE
-var SK="gch_v5";
+var SK="gch_v6";
 function save(s){try{localStorage.setItem(SK,JSON.stringify(s))}catch(x){}}
 function load(){try{var r=localStorage.getItem(SK);return r?JSON.parse(r):null}catch(x){return null}}
 function clear(){try{localStorage.removeItem(SK)}catch(x){}}
@@ -67,91 +67,91 @@ function normalizeFind(v){
 var GC={
   rock:{id:"rock",name:"rock",
     reactions:{
-      first:["...","you picked up a rock.","you picked up a rock and scanned it.","that's either very smart or very suspicious behavior."],
-      early:["a rock. you found a rock.","most people would walk right past it. you didn't.","noted."],
-      late:["oh, you found the rock.","it's been sitting there the whole time.","i was starting to wonder."]},
+      first:["...","a rock.","bold opening move.","statistically there were many wrong ones.","you committed anyway."],
+      early:["a rock.","most people walk right past it.","you did not."],
+      late:["oh, the rock.","i was wondering when you'd get here."]},
     puzzle:{
-      prompt:["you picked up a rock in a yard full of them and somehow found the right one. speaking of finding things — you know who's bad at that? the united states military.","they've lost nuclear weapons. not retired. not destroyed. lost. they even have a cute name for it. 'broken arrow.'","how many are still missing?"],
+      prompt:["you found one rock in a yard full of them.","which brings us to people who are bad at finding things.","the united states military has lost nuclear weapons.","","question.","how many are still missing."],
       validate:function(a){var n=a.toLowerCase().trim();return n==="6"||n==="six"||n==="half a dozen"},
-      correct:["six. six nuclear weapons just... out there somewhere.","one's been in a swamp in north carolina since 1961. they put up a sign. a sign.","you're holding a fake rock in a backyard and now you know more than most adults. don't waste it."],
-      wrong:function(a){var n=parseInt(a);if(!isNaN(n)&&n>=1&&n<=5)return["higher. you're giving them too much credit."];if(!isNaN(n)&&n>=10)return["lower. but i respect that you assumed the worst immediately."];if(!isNaN(n)&&n>=7&&n<=9)return["close. but no. try again."];return["it's a number. between 1 and 10.","and it's the wrong number of nuclear weapons to lose, which is any of them."]},
-      hints:["single digits. which is not the comfort it sounds like.","more than 4. less than 8. every single one of them is just... somewhere.","six. the answer is six. one is in a swamp. they put up a sign. we've been over this."]}},
+      correct:["six.","which is six more than anyone should lose.","one is in a swamp in north carolina.","they put up a sign.","a sign."],
+      wrong:function(a){var n=parseInt(a);if(!isNaN(n)&&n>=1&&n<=5)return["higher. you're giving them too much credit."];if(!isNaN(n)&&n>=10)return["lower. but i respect that you assumed the worst immediately."];if(!isNaN(n)&&n>=7&&n<=9)return["close. but no. try again."];return["it's a number.","between 1 and 10."]},
+      hints:["single digits.","which is not the comfort it sounds like.","more than 4. less than 8.","six. the answer is six."]}},
   pinecone:{id:"pinecone",name:"pinecone",
     reactions:{
-      first:["a pinecone.","you started with a pinecone.","that's... actually kind of methodical. you looked down first.","noted."],
-      early:["pinecone. sure.","nature's grenade, if you think about it.","don't think about it."],
-      late:["this was just sitting there the whole time.","it's literally a pinecone.","this was a freebie and you took five detours to get here."]},
+      first:["a pinecone.","solid.","low-risk opening move."],
+      early:["pinecone.","nature's grenade."],
+      late:["this was literally just sitting there.","freebie."]},
     puzzle:{
-      prompt:["you know how old this pinecone is? neither do i. but i know something that's older than you think it is.","which is older — oxford university or the aztec empire?","before you answer, think about which one feels wrong. pick that one."],
+      prompt:["","question.","which is older.","oxford university or the aztec empire."],
       validate:function(a){return a.toLowerCase().trim().indexOf("oxford")!==-1},
-      correct:["oxford. by three hundred years.","they were handing out degrees before the aztecs had a calendar.","everything you think you know about what's 'old' is probably off by a few centuries. just so you know."],
-      wrong:["no. and i told you to pick the one that felt wrong. try again."],
-      hints:["i literally told you to pick the one that feels wrong.","one of these started in 1096. the other in 1428. i'll let you figure out which is which.","oxford. it's oxford. i tried to help you."]}},
+      correct:["oxford.","by about 300 years.","they were handing out degrees before the aztecs existed.","...history is weird."],
+      wrong:["no.","pick the one that feels wrong."],
+      hints:["i literally told you to pick the one that feels wrong.","one started in 1096. the other in 1428.","oxford. it's oxford."]}},
   mushroom:{id:"mushroom",name:"mushroom",
     reactions:{
-      first:["the mushroom. interesting.","you know in video games mushrooms always do something.","this one doesn't. it's just a mushroom.","...or is it. no. it isn't. but you hesitated."],
-      early:["ah, the mushroom.","i hid that one in plain sight because mushrooms already look like they don't belong anywhere.","nature's glitch in the matrix."],
-      late:["you found the mushroom last-ish.","it was literally just sitting there. being a mushroom.","sometimes the things that are hardest to find are the ones that aren't hiding.","...that sounded deeper than i meant it."]},
+      first:["the mushroom.","classic.","this feels like a trap.","it isn't.","but it feels like it."],
+      early:["ah. mushroom.","good instincts or gamer damage.","hard to tell."],
+      late:["you found the mushroom.","it was just sitting there.","menacingly."]},
     puzzle:{
-      prompt:["you know what else hides underground and knows more than it should. ...don't answer that.","in undertale — the name screen — what happens if you type 'frisk'?"],
+      prompt:["","question.","in undertale, what happens if you type 'frisk' on the name screen."],
       validate:function(a){var l=a.toLowerCase().trim();return l.indexOf("hard")!==-1&&(l.indexOf("mode")!==-1||l.indexOf("difficult")!==-1||l.length<12)},
-      correct:["hard mode. you type the name you're not supposed to know yet and the game decides you need to be humbled.","that's the kind of thing toby fox does. hides a consequence inside a choice most people won't make.","you knew that though. i can tell."],
-      wrong:["no. think about what toby fox would do if he caught you knowing something early. he wouldn't ignore it."],
-      hints:["frisk is the name you learn at the end. what happens when you use it at the beginning?","the game changes difficulty. guess which direction.","hard mode. the game activates hard mode. because of course it does."]}},
+      correct:["hard mode.","you used a name you weren't supposed to know yet.","so the game punished you.","fair."],
+      wrong:["no.","think about what toby fox would do with forbidden knowledge."],
+      hints:["frisk is the name you learn at the end.","the game changes difficulty.","hard mode."]}},
   dogpoop:{id:"dogpoop",name:"that",
     reactions:{
-      first:["...","you picked that up.","you saw it on the ground and your first instinct was to pick it up.","i'm going to remember this about you."],
-      early:["oh no.","you actually — okay.","we're not going to dwell on this.","but i am taking notes."],
-      late:["you found five other things first.","perfectly normal, interesting things.","and yet here you are. holding that.","i respect the commitment. i don't understand it. but i respect it."]},
+      first:["...","you picked that up.","no hesitation.","that's a personality trait."],
+      early:["you did it again.","this is becoming a pattern."],
+      late:["five normal objects.","five chances to pivot.","and then this.","incredible consistency."]},
     puzzle:{
-      prompt:["you picked that up without hesitation. that level of commitment deserves a reward. here's something you'll never be able to un-know.","what animal poops cubes."],
+      prompt:["you committed.","so now you get something permanent.","","question.","what animal poops cubes."],
       validate:function(a){return a.toLowerCase().trim().indexOf("wombat")!==-1},
-      correct:["wombats. perfect cubes. like tiny dice made of regret.","someone got actual research funding to figure out why. a real person with a real degree wrote a paper about wombat poop geometry.","and now you know about it too. because you picked up fake dog poop in a backyard."],
-      wrong:["no. it's australian. because the answer to 'what animal does something inexplicable' is always australian."],
-      hints:["marsupial. looks like a small angry potato.","it starts with w and the answer will follow you for the rest of your life.","wombat. the answer is wombat. you're never going to forget this. that's my gift to you."]}},
+      correct:["wombats.","perfect cubes.","like nature installed a geometry update.","a real scientist studied this.","you picked up fake poop and got smarter.","humiliating."],
+      wrong:["no.","it's australian.","that should narrow it down."],
+      hints:["marsupial.","built like an angry potato.","wombat."]}},
   spider:{id:"spider",name:"spider",
     reactions:{
-      first:["oh you went straight for the spider.","of course you did.","i put that one there specifically to see who'd grab it first.","and now i know."],
-      early:["the spider.","interesting that you didn't flinch. or maybe you did and i'm being polite."],
-      late:["finally.","the spider was feeling neglected.","it told me. spiders do that."]},
+      first:["...","spider first.","so that's who you are.","useful data."],
+      early:["the spider.","no hesitation.","interesting."],
+      late:["finally.","the spider was getting offended."]},
     puzzle:{
-      prompt:["you grabbed a spider and didn't flinch. so let's talk about what actually kills things. because it's not spiders.","highest kill rate of any predator on earth. not biggest. not scariest. most successful. percentage of hunts that end in a catch.","what is it."],
+      prompt:["","question.","what predator has a 95 percent kill rate.","highest on earth."],
       validate:function(a){var l=a.toLowerCase().trim();return l.indexOf("dragonfl")!==-1||l.indexOf("dragon fl")!==-1},
-      correct:["dragonfly. 95 percent.","lions are at 25. your cat is honestly better than a lion.","the most lethal hunter on the planet weighs less than a paperclip and you've been waving it away from your face your entire life."],
-      wrong:function(a){var l=a.toLowerCase().trim();var big=["lion","shark","cheetah","wolf","eagle","bear","tiger","orca","crocodile","croc","hawk","falcon","spider","snake","leopard","jaguar","panther","great white"];for(var i=0;i<big.length;i++){if(l.indexOf(big[i])!==-1)return["no. you're thinking like someone who watches nature documentaries.","the real answer is something you've ignored near every pond you've ever been to."]}return["no. smaller. way smaller. embarrassingly smaller."]},
-      hints:["it flies. it's an insect. it's been right in front of you a hundred times.","you've seen them near water. they look like tiny helicopters. they are killing machines.","dragonfly. 95 percent kill rate. the perfect predator has been vibing near your local pond this whole time."]}},
+      correct:["dragonfly.","95 percent.","lions are at 25.","your house cat is doing better than a lion.","embarrassing for the lion community."],
+      wrong:function(a){var l=a.toLowerCase().trim();var big=["lion","shark","cheetah","wolf","eagle","bear","tiger","orca","crocodile","croc","hawk","falcon","spider","snake","leopard","jaguar","panther","great white"];for(var i=0;i<big.length;i++){if(l.indexOf(big[i])!==-1)return["no.","you're thinking like someone who watches nature documentaries.","smaller."]}return["no.","smaller.","way smaller."]},
+      hints:["it flies.","it is an insect.","dragonfly."]}},
   frog:{id:"frog",name:"frog",
     reactions:{
-      first:["the frog.","you started with the frog.","it's been watching you longer than you've been watching it."],
-      early:["the frog.","look at its face. it knows something you don't.","well. it did. now you're about to know it too."],
-      late:["the frog.","look at its face. it's been waiting."]},
+      first:["the frog.","strong start.","look at its face.","it knows something."],
+      early:["the frog.","still weird.","still judging you."],
+      late:["the frog has been waiting.","patiently."]},
     puzzle:{
-      prompt:["here's something that's going to break your brain a little.","52 cards. a normal deck. shuffled.","which is bigger — the number of ways those cards could be arranged, or the number of atoms on earth?"],
+      prompt:["","question.","which is bigger.","the number of ways to arrange a deck of 52 cards.","or the number of atoms on earth."],
       validate:function(a){var l=a.toLowerCase().trim();return l.indexOf("card")!==-1||l.indexOf("deck")!==-1||l.indexOf("shuffle")!==-1||l.indexOf("arrange")!==-1||l.indexOf("52")!==-1||l.indexOf("factorial")!==-1},
-      correct:["the cards. and it's not even a little bit close.","every time anyone has ever shuffled a deck of cards, they almost certainly created an arrangement that has never existed before. not once. in the entire history of the universe.","52 cards. that's all it takes to outnumber the atoms on earth."],
-      wrong:["no. think about it. there are a lot of atoms. but a deck of cards is weirder than you think.","try again."],
-      hints:["one of these numbers has about 50 digits. the other has 68. i'll let you figure out which is which.","every shuffle is probably unique. every single one. ever. that should tell you something.","cards. it's always the cards. the universe is big but a deck of cards is bigger. mathematically. i don't make the rules."]}}
+      correct:["the cards.","and it's not close.","every shuffle is probably unique.","ever.","you have almost definitely never seen the same deck twice.","...that should bother you."],
+      wrong:["no.","you're underestimating how weird cards are.","try again."],
+      hints:["one of these numbers has about 50 digits.","the other has more.","cards. it's the cards."]}}
 };
 
-var INTRO=["oh. you found it.","there are six objects in this yard. they're not easter eggs.","find one. tap it. i'll know.","do what i ask and i'll make it worth your time.","go."];
+var INTRO=["...","oh.","you found it.","good.","there are six objects.","they are not random.","one of you is about to take this too seriously.","i'm watching for that.","","find one.","tap it.","go."];
 var CLOTHES=["this isn't part of the game. i just want to know.","which one of you has gone the longest without changing clothes. don't answer. just look at each other.","...that was fast. and unanimous. wow.","that one wasn't mine, by the way. it was already in here when i showed up."];
 var COMPLETE={
-  no:["...","you did all six.","without asking for help.","i don't — that doesn't happen. people always ask.","okay. i underestimated you. that's not easy for me to say.","go find the person who sent you out here. they have something for you.","you earned it. don't make it weird."],
-  some:["...","all six. done.","you needed a little help. that's fine. asking for help is actually —","no. i'm not going to give you a life lesson. you did the thing.","go find the person who sent you out here. they have something for you.","go get it before i change my mind."],
-  many:["...","technically, you finished.","with... a lot of help. from me. which i provided. generously.","look, the point isn't how you got here. the point is you kept going.","go find the person who sent you out here. they have something for you.","you're welcome."]
+  no:["...","you did all six.","no help.","annoying.","...but impressive.","go find the person who sent you out here.","you earned it."],
+  some:["...","all six.","with some assistance.","i'm choosing to respect the effort.","go find the person who sent you out here.","you earned it."],
+  many:["...","you got there.","eventually.","with a lot of help.","but you didn't quit.","that counts.","go find the person who sent you out here."]
 };
 var QUIPS={
-  1:["how many of you are reading this right now.","...yeah. that's too many. one of you should be looking for the next one."],
-  2:["two down. you're either fast or lucky.","i haven't decided which yet."],
+  1:["how many of you are reading this right now.","...yeah. that's too many.","one of you should be looking for the next one."],
+  2:["two down.","you're either fast or lucky.","i haven't decided which yet."],
   3:["halfway.","you're actually doing this."],
-  4:["four. two left.","you're more persistent than i expected. that's not an insult. probably."],
-  5:["one more.","one of you knew that answer before the others. i could tell because you said it louder.","you know who you are.","i'm... almost going to miss this.","almost."]
+  4:["you've developed a pattern.","i'm not saying it's good.","i'm saying it's consistent."],
+  5:["one more.","one of you knew that answer immediately.","and one of you pretended you did.","i saw both.","also, whoever touched the fake poop first.","bold."]
 };
 var WRONGROCK=[
-  ["...that's a rock. it's not the right rock. but you tried."],
-  ["another rock. still wrong. you're very committed to this."],
-  ["at this point you're just picking up rocks as a hobby. which — honestly, respect."],
-  ["still wrong. there are a finite number of rocks out here. you'll get there."]
+  ["wrong rock.","but the confidence was incredible."],
+  ["still wrong.","this is becoming a lifestyle choice."],
+  ["another wrong rock.","you are now emotionally invested in rocks."],
+  ["i admire the commitment.","not the accuracy."]
 ];
 var IDLE_E=["still looking.","take your time. i'm not going anywhere. literally.","you're walking in a pattern. i don't think you know that.","...interesting strategy.","i can see all of them from here. just so you know."];
 var IDLE_M=["you've walked past one twice now.","i'm not going to tell you which direction to look. but i will say... down.","one of them is closer than you think. one of them isn't.","the obvious spots are obvious for a reason.","you're overthinking this. or underthinking it. hard to tell."];
@@ -180,7 +180,6 @@ function App(){
   var saved=useMemo(function(){return load()},[]);
   var pName=getName();
 
-  // ALL STATE - initialized from saved or defaults
   var _gs=useState(saved?saved.gs||"exploring":"intro"),gs=_gs[0],setGs=_gs[1];
   var _lines=useState(saved?saved.lines||[]:[]),lines=_lines[0],setLines=_lines[1];
   var _found=useState(saved?saved.found||[]:[]),found=_found[0],setFound=_found[1];
@@ -203,7 +202,6 @@ function App(){
   var _flash=useState(false),flash=_flash[0],setFlash=_flash[1];
   var _glitch=useState(false),glitching=_glitch[0],setGlitch=_glitch[1];
   var _ghost=useState(null),ghost=_ghost[0],setGhost=_ghost[1];
-  var _tabbed=useState(false),tabbed=_tabbed[0],setTabbed=_tabbed[1];
 
   var initDone=useRef(false);
   var pending=useRef(normalizeFind(_find));
@@ -212,6 +210,7 @@ function App(){
   var foundR=useRef(found);
   var solvedR=useRef(solved);
   var typR=useRef(false);
+  var curR=useRef(cur);
   var idleTmr=useRef(null);
   var idleCnt=useRef(0);
   var idleUsed=useRef([]);
@@ -221,11 +220,12 @@ function App(){
   useEffect(function(){foundR.current=found},[found]);
   useEffect(function(){solvedR.current=solved},[solved]);
   useEffect(function(){typR.current=typing},[typing]);
+  useEffect(function(){curR.current=cur},[cur]);
 
   // PERSIST
   useEffect(function(){
     if(gs==="intro")return;
-    save({gs:gs==="puzzle"?"exploring":gs,lines:lines.slice(-40),found:found,solved:solved,hu:hu,th:th,cd:clothesDone,wr:wr,gd:gDone,nu:nUsed,cc:cheat})
+    save({gs:gs==="puzzle"?"exploring":gs,lines:lines.slice(-60),found:found,solved:solved,hu:hu,th:th,cd:clothesDone,wr:wr,gd:gDone,nu:nUsed,cc:cheat})
   },[gs,lines,found,solved,hu,th,clothesDone,wr,gDone,nUsed,cheat]);
 
   // SCROLL
@@ -234,7 +234,6 @@ function App(){
     btm.current.scrollIntoView({behavior:"auto",block:"end"});
   },[lines.length,showInp,showExp,black]);
 
-  // IDLE
   function startIdle(){stopIdle();idleCnt.current=0;nextIdle()}
   function stopIdle(){if(idleTmr.current){clearTimeout(idleTmr.current);idleTmr.current=null}}
   function pickU(pool){var a=pool.filter(function(l){return idleUsed.current.indexOf(l)===-1});if(!a.length){idleUsed.current=[];a=pool}var p=a[Math.floor(Math.random()*a.length)];idleUsed.current.push(p);return p}
@@ -249,8 +248,26 @@ function App(){
     },b+j)
   }
 
-  // TYPING ENGINE
-  var type=useCallback(function(arr,cb,slow){
+  function lineDelay(line,mode){
+    if(line==="") return mode==="result"?700:600;
+    if(mode==="result"){
+      if(line==="...") return 700;
+      if(line.length<16) return 900;
+      return 1150;
+    }
+    if(mode==="question"){
+      if(line==="") return 700;
+      if(line.toLowerCase()==="question.") return 650;
+      if(line.length<18) return 500;
+      return 700;
+    }
+    if(line==="...") return 500;
+    if(line.length<10) return 250;
+    if(line.length<22) return 350;
+    return 500;
+  }
+
+  var type=useCallback(function(arr,cb,mode){
     if(!arr||!arr.length){if(cb)cb();return}
     var i=0;setTyping(true);
     function go(){
@@ -258,10 +275,11 @@ function App(){
         var line=arr[i]||"";
         setLines(function(p){return p.concat([line])});
         i++;
-        var prev=arr[i-1]||"";
-        var d=slow?(prev==="..."?700:prev.length<18?900:1150):(prev==="..."?500:prev.length<10?250:400);
-        setTimeout(go,d)
-      }else{setTyping(false);if(cb)cb()}
+        setTimeout(go,lineDelay(line,mode))
+      }else{
+        setTyping(false);
+        if(cb)cb()
+      }
     }
     go()
   },[]);
@@ -271,7 +289,7 @@ function App(){
 
   // TAB DETECTION
   useEffect(function(){
-    function v(){if(document.hidden&&gsR.current==="puzzle")setTabbed(true)}
+    function v(){}
     document.addEventListener("visibilitychange",v);
     return function(){document.removeEventListener("visibilitychange",v)}
   },[]);
@@ -282,20 +300,18 @@ function App(){
     initDone.current=true;
     var hasProgress=saved&&((saved.solved&&saved.solved.length>0)||(saved.found&&saved.found.length>0));
     if(hasProgress){
-      // RETURNING - skip intro
       if(pending.current){
         var fid=pending.current;pending.current=null;
         setLines([]);
         type(["you're back.","where were we. right."],function(){
           goExplore();
           setTimeout(function(){doFind(fid)},300)
-        })
+        },"result")
       }else{
         setLines([]);
-        type(["...you're still here. good."],function(){goExplore()})
+        type(["...you're still here. good."],function(){goExplore()},"result")
       }
     }else{
-      // FRESH
       setTimeout(function(){
         type(INTRO,function(){
           goExplore();
@@ -303,7 +319,7 @@ function App(){
             var id=pending.current;pending.current=null;
             setTimeout(function(){doFind(id)},400)
           }
-        })
+        },"question")
       },600)
     }
     return function(){stopIdle()}
@@ -327,7 +343,6 @@ function App(){
     return function(){window.removeEventListener("focus",hf);window.removeEventListener("pageshow",ps)}
   },[]);
 
-  // FIND
   function doFind(id){
     leaveExplore();
     if(id==="wrongrock")doWrongRock();
@@ -339,10 +354,9 @@ function App(){
     var idx=Math.min(wr,WRONGROCK.length-1);
     setWr(function(p){return p+1});
     setLines([]);
-    type(WRONGROCK[idx],function(){goExplore()})
+    type(WRONGROCK[idx],function(){goExplore()},"result")
   }
 
-  // GLITCH
   function doGlitch(cb){
     setGDone(true);setLines([]);setGlitch(true);
     vib([20,50,20,50,20,100,40]);playTone();
@@ -350,53 +364,50 @@ function App(){
       setGlitch(false);setBlack(true);
       setTimeout(function(){
         setBlack(false);setLines([]);
-        type(["...no.","that's not — ignore that. the old version is still in here somewhere.","it's fine. keep going."],function(){setTimeout(cb,400)})
+        type(["...no.","that's not — ignore that. the old version is still in here somewhere.","it's fine. keep going."],function(){setTimeout(cb,400)},"result")
       },2000)
-    })
+    },"result")
   }
 
-  // POST-SOLVE EVENTS
   function postSolve(count,cb){
-    if(!clothesDone&&count===3){setClDone(true);type(CLOTHES,function(){setTimeout(cb,600)});return}
+    if(count===2){
+      type(["by the way.","whoever picked up that thing earlier.","we're still thinking about that."],function(){setTimeout(cb,300)},"result");
+      return
+    }
+    if(!clothesDone&&count===3){setClDone(true);type(CLOTHES,function(){setTimeout(cb,600)},"result");return}
     if(!gDone&&count===4){doGlitch(cb);return}
-    if(QUIPS[count]){type(QUIPS[count],function(){setTimeout(cb,300)});return}
+    if(QUIPS[count]){type(QUIPS[count],function(){setTimeout(cb,300)},"result");return}
     cb()
   }
 
-  // BLOCK SCANNING DURING PUZZLE
   function doGeo(id){
     var gc=GC[id];if(!gc)return;
 
-    // Already solved
     if(solvedR.current.indexOf(id)!==-1){
       setLines([]);
-      type(["you already did this one. i remember even if you don't."],function(){goExplore()});
+      type(["you already did this one.","i remember even if you don't."],function(){goExplore()},"result");
       return
     }
 
-    // Must solve current puzzle first
-    if(cur!==null&&cur!==id){
+    if(curR.current!==null&&curR.current!==id){
       setLines([]);
       type(["finish what you started first."],function(){
-        // Re-show the current puzzle
         setGs("puzzle");
-        var curGc=GC[cur];
-        type(curGc.puzzle.prompt,function(){setShowInp(true);setShowHint(true)})
-      });
+        var curGc=GC[curR.current];
+        type(curGc.puzzle.prompt,function(){setShowInp(true);setShowHint(true)},"question")
+      },"result");
       return
     }
 
-    // Already found but not solved - re-ask
     if(foundR.current.indexOf(id)!==-1){
       setLines([]);
-      type(["we were in the middle of this one. let me ask again."],function(){
+      type(["we were in the middle of this one.","let me ask again."],function(){
         setCur(id);setGs("puzzle");
-        type(gc.puzzle.prompt,function(){setShowInp(true);setShowHint(true)})
-      });
+        type(gc.puzzle.prompt,function(){setShowInp(true);setShowHint(true)},"question")
+      },"result");
       return
     }
 
-    // NEW DISCOVERY
     setFound(function(p){return p.concat([id])});
     var fc=foundR.current.length;
     var isLast=solvedR.current.length===5;
@@ -408,97 +419,121 @@ function App(){
           type(["let's make it count."],function(){
             setTimeout(function(){
               setCur(id);setGs("puzzle");
-              type(gc.puzzle.prompt,function(){setShowInp(true);setShowHint(true)})
+              type(gc.puzzle.prompt,function(){setShowInp(true);setShowHint(true)},"question")
             },400)
-          })
+          },"result")
         },800)
-      })
+      },"result")
     }else{
       var rt=fc===0?"first":fc<3?"early":"late";
       var rx=gc.reactions[rt].slice();
-      // Name drop after glitch
       if(gDone&&!nUsed&&pName){
         setNUsed(true);
-        rx.push("you're doing well, "+pName+". you and your boys.")
+        rx.push("you're doing well, "+pName+".");
       }
       type(rx,function(){
         setTimeout(function(){
           setCur(id);setGs("puzzle");
-          type(gc.puzzle.prompt,function(){setShowInp(true);setShowHint(true)})
-        },400)
-      })
+          type(gc.puzzle.prompt,function(){setShowInp(true);setShowHint(true)},"question")
+        },450)
+      },"question")
     }
   }
 
-  // SUBMIT
   function submit(){
     if(!cur||!inp.trim())return;
     lockScroll.current=true;
     var gc=GC[cur];var pz=gc.puzzle;var ans=inp.trim();
-    setInp("");setShowInp(false);setShowHint(false);
+    setInp("");
+    setShowInp(false);
+    setShowHint(false);
     setLines(function(p){return p.concat(["> "+ans])});
 
     var cheatLines=[];
-    if(tabbed&&!cheat){setCheat(true);setTabbed(false);cheatLines=["...you just looked that up, didn't you.","i'm not mad. i'm just aware."]}
-    else setTabbed(false);
 
     if(pz.validate(ans)){
-      // CORRECT
-      vib([50,30,80]);setFlash(true);setTimeout(function(){setFlash(false)},300);
+      vib([50,30,80]);
+      setFlash(true);
+      setTimeout(function(){setFlash(false)},300);
       var resp=Array.isArray(pz.correct)?pz.correct:[pz.correct];
       var all=cheatLines.concat(resp);
       setTimeout(function(){
         type(all,function(){
           var ns=solvedR.current.concat([cur]);
-          setSolved(ns);setCur(null);
-          if(ns.length===6){setTimeout(function(){lockScroll.current=false;finish()},800)}
-          else{setLines([]);postSolve(ns.length,function(){
-            lockScroll.current=false;
-            goExplore();
-            if(pending.current){var id=pending.current;pending.current=null;setTimeout(function(){doFind(id)},300)}
-          })}
-        },true)
-      },400)
+          setSolved(ns);
+          setCur(null);
+          if(ns.length===6){
+            setTimeout(function(){lockScroll.current=false;finish()},900)
+          }else{
+            setTimeout(function(){
+              setLines([]);
+              postSolve(ns.length,function(){
+                lockScroll.current=false;
+                goExplore();
+                if(pending.current){
+                  var id=pending.current;pending.current=null;
+                  setTimeout(function(){doFind(id)},300)
+                }
+              })
+            },500)
+          }
+        },"result")
+      },350)
     }else{
-      // WRONG
       var wr2;
       if(typeof pz.wrong==="function")wr2=pz.wrong(ans);
       else if(Array.isArray(pz.wrong))wr2=pz.wrong;
       else wr2=[pz.wrong];
       var allW=cheatLines.concat(wr2);
-      setTimeout(function(){type(allW,function(){lockScroll.current=false;setShowInp(true);setShowHint(true)})},300)
+      setTimeout(function(){
+        type(allW,function(){
+          lockScroll.current=false;
+          setShowInp(true);
+          setShowHint(true)
+        },"result")
+      },250)
     }
   }
 
   function hint(){
-    if(!cur)return;lockScroll.current=true;var gc=GC[cur];var c=hu[cur]||0;
-    if(c>=gc.puzzle.hints.length)return;
+    if(!cur)return;
+    lockScroll.current=true;
+    var gc=GC[cur];var c=hu[cur]||0;
+    if(c>=gc.puzzle.hints.length){lockScroll.current=false;return}
     var t=gc.puzzle.hints[c];
     setHu(function(p){var n={};for(var k in p)n[k]=p[k];n[cur]=c+1;return n});
     setTh(function(p){return p+1});
     setShowInp(false);setShowHint(false);
     var pre=c===0?["...fine."]:c===1?["this is the part where i try not to be judgmental."]:["we're not going to talk about how many times you've asked."];
-    type(pre.concat([t]),function(){lockScroll.current=false;setShowInp(true);if(c+1<gc.puzzle.hints.length)setShowHint(true)})
+    type(pre.concat(["",t]),function(){
+      lockScroll.current=false;
+      setShowInp(true);
+      if(c+1<gc.puzzle.hints.length)setShowHint(true)
+    },"result")
   }
 
   function finish(){
     clear();setLines([]);
     var msgs=th===0?COMPLETE.no:th<=3?COMPLETE.some:COMPLETE.many;
     var final=msgs.concat(["if she asks about the voice, tell her everything worked perfectly."]);
-    type(final,function(){lockScroll.current=false;setGs("complete");setTimeout(function(){setGhost("you're still here.")},60000)},true)
+    type(final,function(){
+      lockScroll.current=false;
+      setGs("complete");
+      setTimeout(function(){setGhost("you're still here.")},60000)
+    },"result")
   }
 
   var rem=6-solved.length;
 
-  // RENDER
   if(black)return e("div",{style:{minHeight:"100vh",minHeight:"100dvh",backgroundColor:"#0a0a0a"}});
 
   return e("div",{style:{minHeight:"100vh",minHeight:"100dvh",backgroundColor:flash?"#151515":"#0a0a0a",color:"#c8c8c8",fontFamily:"'Courier New',Courier,monospace",fontSize:"15px",lineHeight:"1.6",padding:"20px 16px",maxWidth:"100%",boxSizing:"border-box",position:"relative",transition:"background-color 0.15s ease"}},
-    // LINES
     e("div",{style:{paddingBottom:"20px"}},
       lines.map(function(l,i){
         if(l==null)return null;
         if(l==="---")return e("hr",{key:"l"+i,style:{border:"none",borderTop:"1px solid #1a1a1a",margin:"24px 0"}});
+        if(l==="")return e("div",{key:"l"+i,style:{height:"10px"}});
+        if(typeof l==="string"&&l.toLowerCase()==="question.")return e("p",{key:"l"+i,style:{margin:0,padding:"2px 0",opacity:0,animation:"fadeIn 0.4s ease forwards",color:"#888",fontSize:"12px",letterSpacing:"2px",textTransform:"uppercase"}},l);
         if(typeof l==="string"&&l.indexOf("> ")===0)return e("p",{key:"l"+i,style:{margin:0,padding:"2px 0",opacity:0,animation:"fadeIn 0.4s ease forwards",color:"#555",fontSize:"14px"}},l);
         if(glitching&&l.indexOf("🎉")!==-1)return e("p",{key:"l"+i,style:{margin:0,padding:"2px 0",opacity:0,animation:"fadeIn 0.4s ease forwards",color:"#4a9",fontSize:"14px",fontStyle:"italic"}},l);
         if(glitching)return e("p",{key:"l"+i,style:{margin:0,padding:"2px 0",opacity:0,animation:"glitchText 0.3s ease infinite, fadeIn 0.4s ease forwards",color:"#884444"}},l);
@@ -507,20 +542,17 @@ function App(){
       typing?e("span",{style:{display:"inline-block",width:"8px",height:"15px",backgroundColor:"#c8c8c8",marginLeft:"2px",marginTop:"4px",animation:"blink 1s step-end infinite"}}):null,
       ghost?e("p",{style:{margin:0,padding:"2px 0",color:"#333",marginTop:"40px"}},ghost):null
     ),
-    // EXPLORING
     showExp&&!typing&&gs==="exploring"&&rem>0?e("div",{style:{opacity:0,animation:"fadeIn 0.6s ease 0.3s forwards"}},
       e(Scanner,{n:rem}),
       idle?e("p",{key:"i-"+idle,style:{textAlign:"center",color:"#444",fontSize:"13px",marginTop:"16px",fontStyle:"italic",opacity:0,animation:"fadeIn 0.6s ease forwards"}},idle)
         :e("p",{style:{textAlign:"center",color:"#2a2a2a",fontSize:"12px",marginTop:"16px",letterSpacing:"1px",animation:"idleFade 4s ease-in-out infinite"}},"scanning")
     ):null,
-    // INPUT
     showInp&&!typing&&gs==="puzzle"?e("div",{style:{marginTop:"16px",display:"flex",flexDirection:"column",gap:"10px"}},
       e("input",{style:{backgroundColor:"#111",border:"1px solid #333",color:"#c8c8c8",fontFamily:"'Courier New',Courier,monospace",fontSize:"16px",padding:"12px",borderRadius:0,outline:"none",width:"100%",boxSizing:"border-box",WebkitAppearance:"none"},type:"text",value:inp,onChange:function(ev){setInp(ev.target.value)},onKeyDown:function(ev){if(ev.key==="Enter")submit()},placeholder:"...",autoFocus:true,autoComplete:"off",autoCapitalize:"off",spellCheck:false}),
       e("div",{style:{display:"flex",gap:"12px",alignItems:"center"}},
         e("button",{style:{backgroundColor:"transparent",border:"1px solid #444",color:"#888",fontFamily:"'Courier New',Courier,monospace",fontSize:"13px",padding:"10px 20px",cursor:"pointer"},onClick:submit},"submit"),
-        showHint?e("button",{style:{backgroundColor:"transparent",border:"1px solid #2a2a2a",color:"#444",fontFamily:"'Courier New',Courier,monospace",fontSize:"12px",padding:"8px 14px",cursor:"pointer"},onClick:hint},"i need help"):null)
+        showHint?e("button",{style:{backgroundColor:"transparent",border:"1px solid #2a2a2a",color:"#444",fontFamily:"'Courier New',Courier,monospace",fontSize:"12px",padding:"8px 14px",cursor:"pointer"},onClick:hint},"fine. hint."):null)
     ):null,
-    // DOTS
     !black?e("div",{style:{position:"fixed",bottom:0,left:0,right:0,display:"flex",justifyContent:"center",gap:"12px",padding:"14px 12px",paddingBottom:"max(14px, env(safe-area-inset-bottom))",backgroundColor:"#0a0a0aee",borderTop:"1px solid #111"}},
       KEYS.map(function(id){
         var s=solved.indexOf(id)!==-1;var f=found.indexOf(id)!==-1;
