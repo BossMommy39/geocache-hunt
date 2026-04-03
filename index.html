@@ -1,207 +1,170 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Hunt</title>
-
+<title>SYSTEM_HUNT</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#0a0a0a;color:#c8c8c8;font-family:Courier New,monospace;padding:20px}
-button,input{background:#111;border:1px solid #333;color:#c8c8c8;padding:10px;margin:4px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#0a0a0a;color:#c8c8c8;font-family:'Courier New',Courier,monospace;font-size:15px;line-height:1.6;padding:20px;min-height:100vh}
+#root{max-width:600px;margin:0 auto}
+.line{margin-bottom:8px;opacity:0;animation:fadeIn 0.4s forwards}
+.input-line{color:#555;font-size:14px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.cursor{display:inline-block;width:8px;height:15px;background:#c8c8c8;animation:blink 1s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+input{background:#111;border:1px solid #333;color:#c8c8c8;font-family:inherit;padding:12px;width:100%;outline:none;margin-top:15px}
+button{background:transparent;border:1px solid #444;color:#888;padding:10px 20px;margin-top:10px;cursor:pointer;font-family:inherit}
+.scanner{text-align:center;margin:40px 0;border:1px solid #1a1a1a;padding:20px;border-radius:50%;width:150px;height:150px;display:flex;flex-direction:column;justify-content:center;margin-left:auto;margin-right:auto}
+.dots{display:flex;justify-content:center;gap:10px;margin-top:30px}
+.dot{width:8px;height:8px;border-radius:50%;background:#1a1a1a;transition:background 0.5s}
+.dot.active{background:#c8c8c8}
 </style>
-
 </head>
-
 <body>
 <div id="root"></div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-
 <script>
 (function(){
-
-const {useState,useEffect,useRef} = React;
+const {useState,useEffect,useRef,useCallback} = React;
 const e = React.createElement;
+const SK = "ann_hunt_v4";
 
-// ✅ FIX 1: persistent storage (no NFC reset)
-const KEY="gch_v3";
-
-function save(s){
-  try{localStorage.setItem(KEY,JSON.stringify(s))}catch{}
-}
-
-function load(){
-  try{
-    const r=localStorage.getItem(KEY);
-    return r?JSON.parse(r):null;
-  }catch{return null}
-}
-
-function clear(){
-  try{localStorage.removeItem(KEY)}catch{}
-}
+const DATA = {
+  rock:{q:"the US military has lost six nuclear weapons that were never recovered. they call them 'broken arrows.' one is in a swamp in north carolina. they put up a sign. how many are still missing?", a:["6","six"]},
+  pinecone:{q:"which is older: oxford university or the aztec empire?", a:["oxford"]},
+  mushroom:{q:"in undertale, what happens if you name the fallen child 'frisk'?", a:["hard mode","difficulty"]},
+  poop:{q:"what animal poops perfect cubes?", a:["wombat"]},
+  spider:{q:"what predator has a 95% kill rate—the highest on earth?", a:["dragonfly","dragon fly"]},
+  frog:{q:"which is larger: the number of ways to shuffle 52 cards, or the number of atoms on earth?", a:["cards","shuffle","deck"]}
+};
 
 function App(){
+  const [lines,setLines] = useState([]);
+  const [solved,setSolved] = useState([]);
+  const [cur,setCur] = useState(null);
+  const [input,setInput] = useState("");
+  const [typing,setTyping] = useState(false);
+  const [gs,setGs] = useState("init"); 
 
-  const saved = load();
-
-  const [lines,setLines]=useState(saved?.lines||[]);
-  const [solved,setSolved]=useState(saved?.solved||[]);
-  const [cur,setCur]=useState(null);
-  const [input,setInput]=useState("");
-  const [typing,setTyping]=useState(false);
-
-  // ✅ scroll lock
-  const lockScroll=useRef(false);
-  const bottom=useRef(null);
-
+  // Persistence
   useEffect(()=>{
-    if(lines.length>0){
-      save({lines,solved});
+    const saved = localStorage.getItem(SK);
+    if(saved){
+      const {solved:s} = JSON.parse(saved);
+      setSolved(s||[]);
+      if(s && s.length > 0) {
+        setLines(["system rebooted. scanning for remaining signals..."]);
+        setGs("idle");
+      }
     }
-  },[lines,solved]);
+  },[]);
 
-  // ✅ FIX 2: safe scroll
   useEffect(()=>{
-    if(lockScroll.current) return;
-    bottom.current?.scrollIntoView({behavior:"auto"});
-  },[lines.length]);
+    if(gs !== "init") localStorage.setItem(SK, JSON.stringify({solved}));
+  },[solved, gs]);
 
-  function type(arr,cb,mode){
-    let i=0;
+  const type = useCallback((arr, cb, speed=400)=>{
     setTyping(true);
-
+    let i = 0;
     function next(){
-      if(i<arr.length){
-        setLines(p=>[...p,arr[i]]);
+      if(i < arr.length){
+        setLines(p => [...p, arr[i]]);
         i++;
-
-        // ✅ FIX 3: better pacing
-        let delay = mode==="result"
-          ? 900
-          : (arr[i-1]==="..." ? 600 : arr[i-1].length<12 ? 300 : 500);
-
-        setTimeout(next,delay);
-
+        setTimeout(next, speed);
       } else {
         setTyping(false);
         if(cb) cb();
       }
     }
     next();
-  }
-
-  // INIT
-  useEffect(()=>{
-    if(lines.length===0){
-      type([
-        "...",
-        "oh.",
-        "you found it.",
-        "good.",
-        "there are six objects.",
-        "one of you is about to take this too seriously.",
-        "i'm watching for that.",
-        "go."
-      ]);
-    }
   },[]);
 
-  function select(id){
-
-    // secret interaction
-    if(solved.includes(id)){
-      lockScroll.current=true;
-      setLines([]);
-
-      type([
-        "...",
-        "you came back.",
-        "most people don't.",
-        "...",
-        "don't lose that."
-      ],()=>{
-        lockScroll.current=false;
-      },"result");
-
-      return;
+  // Start sequence
+  useEffect(()=>{
+    if(gs === "init"){
+      type(["...", "oh. you found it.", "there are six objects in this yard.", "find one. tap it.", "i'll know.", "go."], ()=>setGs("idle"));
     }
+  },[gs, type]);
 
-    setCur(id);
-    setLines([]);
-
-    type([
-      "question:",
-      "what animal poops cubes"
-    ]);
-  }
+  // Handle Scan (URL Param check)
+  useEffect(()=>{
+    const checkScan = () => {
+      const p = new URLSearchParams(window.location.search);
+      const find = p.get("find")?.toLowerCase();
+      if(find && DATA[find] && !solved.includes(find) && !cur){
+        window.history.replaceState({},"",window.location.pathname);
+        setCur(find);
+        setLines([]);
+        setGs("puzzle");
+        type(["object identified.", DATA[find].q]);
+      }
+    };
+    const interval = setInterval(checkScan, 1000);
+    return () => clearInterval(interval);
+  },[cur, solved]);
 
   function submit(){
-
-    if(!cur) return;
-
-    lockScroll.current=true;
-
-    const answer=input.toLowerCase();
-
-    if(answer.includes("wombat")){
-
-      setSolved(p=>[...p,cur]);
-      setCur(null);
-
-      type([
-        "wombats.",
-        "perfect cubes.",
-        "you picked that up and learned this.",
-        "...that's your legacy."
-      ],()=>{
-        lockScroll.current=false;
-      },"result");
-
-    } else {
-
-      type([
-        "no.",
-        "try again."
-      ],()=>{
-        lockScroll.current=false;
-      });
-    }
-
+    if(!input.trim()) return;
+    const ans = input.toLowerCase();
+    const correct = DATA[cur].a.some(a => ans.includes(a));
+    
+    setLines(p => [...p, "> " + input]);
     setInput("");
+    
+    if(correct){
+      setTyping(true);
+      setTimeout(()=>{
+        type(["correct.", "data logged.", "move to the next."], ()=>{
+          setSolved(p => [...p, cur]);
+          setCur(null);
+          setGs("idle");
+        }, 1200); // Slower "Success" read time
+      }, 500);
+    } else {
+      type(["incorrect.", "the facts don't care about your guess. try again."], null, 800);
+    }
   }
 
-  return e("div",{},
-    lines.map((l,i)=>e("div",{key:i},l)),
+  const remaining = 6 - solved.length;
 
-    typing && e("div",{},"_"),
-
-    cur && !typing && e("div",{},
-      e("input",{
-        value:input,
-        onChange:e=>setInput(e.target.value)
+  return e("div", null,
+    lines.map((l,i) => e("div", {key:i, className: l.startsWith(">") ? "line input-line" : "line"}, l)),
+    typing && e("span", {className:"cursor"}),
+    
+    gs === "puzzle" && !typing && e("div", null,
+      e("input", {
+        value:input, 
+        onChange:v=>setInput(v.target.value), 
+        onKeyDown:k=>k.key==='Enter' && submit(),
+        autoFocus: true,
+        placeholder: "type response..."
       }),
-      e("button",{onClick:submit},"submit")
+      e("button", {onClick:submit}, "SUBMIT_DATA")
     ),
 
-    e("div",{style:{marginTop:"20px"}},
-      ["rock","frog","spider","poop","mushroom","pinecone"].map(id=>
-        e("button",{key:id,onClick:()=>select(id)},id)
+    gs === "idle" && !typing && remaining > 0 && e("div", null,
+      e("div", {className:"scanner"}, 
+        e("div", {style:{fontSize:"24px",fontWeight:"bold"}}, remaining),
+        e("div", {style:{fontSize:"10px",opacity:0.5}}, "REMAINING")
       )
     ),
 
-    e("div",{ref:bottom})
+    remaining === 0 && gs === "idle" && !typing && e("div", {style:{marginTop:"20px"}}, 
+       e("div", {className:"line"}, "all signals secured."),
+       e("div", {className:"line"}, "find the person who sent you here."),
+       e("div", {className:"line"}, "tell them the auditor is satisfied.")
+    ),
+
+    e("div", {className:"dots"}, 
+      Object.keys(DATA).map(k => e("div", {key:k, className: solved.includes(k) ? "dot active" : "dot"}))
+    )
   );
 }
 
-ReactDOM.render(e(App),document.getElementById("root"));
-
+ReactDOM.render(e(App), document.getElementById("root"));
 })();
 </script>
-
 </body>
 </html>
