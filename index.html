@@ -7,40 +7,23 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <title>...</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html { height: 100%; overflow-y: scroll; -webkit-overflow-scrolling: touch; }
-  body {
-    background: #0a0a0a; color: #c8c8c8;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 15px; line-height: 1.6;
-    min-height: 100%; position: relative;
-    transition: background-color 0.15s ease;
-  }
-  body::after {
-    content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
-    pointer-events: none; z-index: 9999;
-  }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-  @keyframes pulseDot { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
-  @keyframes scanPulse { 0% { transform: scale(0.3); opacity: 0.6; } 100% { transform: scale(1); opacity: 0; } }
-  @keyframes scanRotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-  @keyframes idleFade { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.6; } }
-  @keyframes glitchText {
-    0% { transform: translateX(0); opacity: 1; }
-    20% { transform: translateX(-3px); opacity: 0.8; }
-    40% { transform: translateX(2px); opacity: 0.9; }
-    60% { transform: translateX(-1px); opacity: 0.7; }
-    80% { transform: translateX(3px); opacity: 0.85; }
-    100% { transform: translateX(0); opacity: 1; }
-  }
-  input::placeholder { color: #333; }
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: #0a0a0a; }
-  ::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
-  input:focus { outline: none; border-color: #555 !important; }
-  button:active { opacity: 0.6; }
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{height:100%;overflow-y:scroll;-webkit-overflow-scrolling:touch}
+body{background:#0a0a0a;color:#c8c8c8;font-family:'Courier New',Courier,monospace;font-size:15px;line-height:1.6;min-height:100%;position:relative;transition:background-color 0.15s ease}
+body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);pointer-events:none;z-index:9999}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes pulseDot{0%{transform:scale(1)}50%{transform:scale(1.4)}100%{transform:scale(1)}}
+@keyframes scanPulse{0%{transform:scale(0.3);opacity:0.6}100%{transform:scale(1);opacity:0}}
+@keyframes scanRotate{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+@keyframes idleFade{0%,100%{opacity:0.3}50%{opacity:0.6}}
+@keyframes glitchText{0%{transform:translateX(0);opacity:1}20%{transform:translateX(-3px);opacity:0.8}40%{transform:translateX(2px);opacity:0.9}60%{transform:translateX(-1px);opacity:0.7}80%{transform:translateX(3px);opacity:0.85}100%{transform:translateX(0);opacity:1}}
+input::placeholder{color:#333}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:#0a0a0a}
+::-webkit-scrollbar-thumb{background:#222;border-radius:2px}
+input:focus{outline:none;border-color:#555 !important}
+button:active{opacity:0.6}
 </style>
 </head>
 <body>
@@ -48,123 +31,105 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
-var useState=React.useState,useEffect=React.useEffect,useRef=React.useRef,useCallback=React.useCallback;
+(function(){
+var useState=React.useState,useEffect=React.useEffect,useRef=React.useRef,useCallback=React.useCallback,useMemo=React.useMemo;
 var e=React.createElement;
 
-var STORAGE_KEY="gch_v2";
-function saveState(s){try{sessionStorage.setItem(STORAGE_KEY,JSON.stringify(s));}catch(x){}}
-function loadState(){try{var r=sessionStorage.getItem(STORAGE_KEY);return r?JSON.parse(r):null;}catch(x){return null;}}
-function clearState(){try{sessionStorage.removeItem(STORAGE_KEY);}catch(x){}}
+// STORAGE
+var SK="gch_v3";
+function save(s){try{sessionStorage.setItem(SK,JSON.stringify(s))}catch(x){}}
+function load(){try{var r=sessionStorage.getItem(SK);return r?JSON.parse(r):null}catch(x){return null}}
+function clear(){try{sessionStorage.removeItem(SK)}catch(x){}}
 
-var initParams=new URLSearchParams(window.location.search);
-var initFind=initParams.get("find");
-var initName=initParams.get("name");
-if(initFind||initName){try{window.history.replaceState({},"",window.location.pathname);}catch(x){}}
+// READ URL PARAMS BEFORE REACT MOUNTS
+var _p=new URLSearchParams(window.location.search);
+var _find=_p.get("find");
+var _name=_p.get("name");
+if(_find||_name){try{window.history.replaceState({},"",window.location.pathname)}catch(x){}}
 
-var GEOCACHES={
+// SAVE NAME IF PROVIDED
+if(_name){try{sessionStorage.setItem("gch_name",_name)}catch(x){}}
+function getName(){
+  if(_name)return _name;
+  try{return sessionStorage.getItem("gch_name")||null}catch(x){return null}
+}
+
+// GAME DATA
+var GC={
   rock:{id:"rock",name:"rock",
     reactions:{
       first:["...","you picked up a rock.","you picked up a rock and scanned it.","that's either very smart or very suspicious behavior."],
       early:["a rock. you found a rock.","most people would walk right past it. you didn't.","noted."],
-      late:["oh, you found the rock.","it's been sitting there the whole time.","i was starting to wonder."]
-    },
+      late:["oh, you found the rock.","it's been sitting there the whole time.","i was starting to wonder."]},
     puzzle:{
       prompt:["you picked up a rock in a yard full of them and somehow found the right one. speaking of finding things \u2014 you know who's bad at that? the united states military.","they've lost nuclear weapons. not retired. not destroyed. lost. they even have a cute name for it. 'broken arrow.'","how many are still missing?"],
-      validate:function(a){var n=a.toLowerCase().trim();return n==="6"||n==="six"||n==="half a dozen";},
-      correctResponse:["six. six nuclear weapons just... out there somewhere.","one's been in a swamp in north carolina since 1961. they put up a sign. a sign.","you're holding a fake rock in a backyard and now you know more than most adults. don't waste it."],
-      wrongResponse:function(a){
-        var n=parseInt(a);
-        if(!isNaN(n)&&n>=1&&n<=5)return["higher. you're giving them too much credit."];
-        if(!isNaN(n)&&n>=10)return["lower. but i respect that you assumed the worst immediately."];
-        if(!isNaN(n)&&n>=7&&n<=9)return["close. but no. try again."];
-        return["it's a number. between 1 and 10.","and it's the wrong number of nuclear weapons to lose, which is any of them."];
-      },
-      hints:["single digits. which is not the comfort it sounds like.","more than 4. less than 8. every single one of them is just... somewhere.","six. the answer is six. one is in a swamp. they put up a sign. we've been over this."]
-    }
-  },
+      validate:function(a){var n=a.toLowerCase().trim();return n==="6"||n==="six"||n==="half a dozen"},
+      correct:["six. six nuclear weapons just... out there somewhere.","one's been in a swamp in north carolina since 1961. they put up a sign. a sign.","you're holding a fake rock in a backyard and now you know more than most adults. don't waste it."],
+      wrong:function(a){var n=parseInt(a);if(!isNaN(n)&&n>=1&&n<=5)return["higher. you're giving them too much credit."];if(!isNaN(n)&&n>=10)return["lower. but i respect that you assumed the worst immediately."];if(!isNaN(n)&&n>=7&&n<=9)return["close. but no. try again."];return["it's a number. between 1 and 10.","and it's the wrong number of nuclear weapons to lose, which is any of them."]},
+      hints:["single digits. which is not the comfort it sounds like.","more than 4. less than 8. every single one of them is just... somewhere.","six. the answer is six. one is in a swamp. they put up a sign. we've been over this."]}},
   pinecone:{id:"pinecone",name:"pinecone",
     reactions:{
       first:["a pinecone.","you started with a pinecone.","that's... actually kind of methodical. you looked down first.","noted."],
       early:["pinecone. sure.","nature's grenade, if you think about it.","don't think about it."],
-      late:["this was just sitting there the whole time.","it's literally a pinecone.","this was a freebie and you took five detours to get here."]
-    },
+      late:["this was just sitting there the whole time.","it's literally a pinecone.","this was a freebie and you took five detours to get here."]},
     puzzle:{
       prompt:["you know how old this pinecone is? neither do i. but i know something that's older than you think it is.","which is older \u2014 oxford university or the aztec empire?","before you answer, think about which one feels wrong. pick that one."],
-      validate:function(a){return a.toLowerCase().trim().indexOf("oxford")!==-1;},
-      correctResponse:["oxford. by three hundred years.","they were handing out degrees before the aztecs had a calendar.","everything you think you know about what's 'old' is probably off by a few centuries. just so you know."],
-      wrongResponse:["no. and i told you to pick the one that felt wrong. try again."],
-      hints:["i literally told you to pick the one that feels wrong.","one of these started in 1096. the other in 1428. i'll let you figure out which is which.","oxford. it's oxford. i tried to help you."]
-    }
-  },
+      validate:function(a){return a.toLowerCase().trim().indexOf("oxford")!==-1},
+      correct:["oxford. by three hundred years.","they were handing out degrees before the aztecs had a calendar.","everything you think you know about what's 'old' is probably off by a few centuries. just so you know."],
+      wrong:["no. and i told you to pick the one that felt wrong. try again."],
+      hints:["i literally told you to pick the one that feels wrong.","one of these started in 1096. the other in 1428. i'll let you figure out which is which.","oxford. it's oxford. i tried to help you."]}},
   mushroom:{id:"mushroom",name:"mushroom",
     reactions:{
       first:["the mushroom. interesting.","you know in video games mushrooms always do something.","this one doesn't. it's just a mushroom.","...or is it. no. it isn't. but you hesitated."],
       early:["ah, the mushroom.","i hid that one in plain sight because mushrooms already look like they don't belong anywhere.","nature's glitch in the matrix."],
-      late:["you found the mushroom last-ish.","it was literally just sitting there. being a mushroom.","sometimes the things that are hardest to find are the ones that aren't hiding.","...that sounded deeper than i meant it."]
-    },
+      late:["you found the mushroom last-ish.","it was literally just sitting there. being a mushroom.","sometimes the things that are hardest to find are the ones that aren't hiding.","...that sounded deeper than i meant it."]},
     puzzle:{
       prompt:["you know what else hides underground and knows more than it should. ...don't answer that.","in undertale \u2014 the name screen \u2014 what happens if you type 'frisk'?"],
-      validate:function(a){var l=a.toLowerCase().trim();return l.indexOf("hard")!==-1&&(l.indexOf("mode")!==-1||l.indexOf("difficult")!==-1||l.length<12);},
-      correctResponse:["hard mode. you type the name you're not supposed to know yet and the game decides you need to be humbled.","that's the kind of thing toby fox does. hides a consequence inside a choice most people won't make.","you knew that though. i can tell."],
-      wrongResponse:["no. think about what toby fox would do if he caught you knowing something early. he wouldn't ignore it."],
-      hints:["frisk is the name you learn at the end. what happens when you use it at the beginning?","the game changes difficulty. guess which direction.","hard mode. the game activates hard mode. because of course it does."]
-    }
-  },
+      validate:function(a){var l=a.toLowerCase().trim();return l.indexOf("hard")!==-1&&(l.indexOf("mode")!==-1||l.indexOf("difficult")!==-1||l.length<12)},
+      correct:["hard mode. you type the name you're not supposed to know yet and the game decides you need to be humbled.","that's the kind of thing toby fox does. hides a consequence inside a choice most people won't make.","you knew that though. i can tell."],
+      wrong:["no. think about what toby fox would do if he caught you knowing something early. he wouldn't ignore it."],
+      hints:["frisk is the name you learn at the end. what happens when you use it at the beginning?","the game changes difficulty. guess which direction.","hard mode. the game activates hard mode. because of course it does."]}},
   dogpoop:{id:"dogpoop",name:"that",
     reactions:{
       first:["...","you picked that up.","you saw it on the ground and your first instinct was to pick it up.","i'm going to remember this about you."],
       early:["oh no.","you actually \u2014 okay.","we're not going to dwell on this.","but i am taking notes."],
-      late:["you found five other things first.","perfectly normal, interesting things.","and yet here you are. holding that.","i respect the commitment. i don't understand it. but i respect it."]
-    },
+      late:["you found five other things first.","perfectly normal, interesting things.","and yet here you are. holding that.","i respect the commitment. i don't understand it. but i respect it."]},
     puzzle:{
       prompt:["you picked that up without hesitation. that level of commitment deserves a reward. here's something you'll never be able to un-know.","what animal poops cubes."],
-      validate:function(a){return a.toLowerCase().trim().indexOf("wombat")!==-1;},
-      correctResponse:["wombats. perfect cubes. like tiny dice made of regret.","someone got actual research funding to figure out why. a real person with a real degree wrote a paper about wombat poop geometry.","and now you know about it too. because you picked up fake dog poop in a backyard."],
-      wrongResponse:["no. it's australian. because the answer to 'what animal does something inexplicable' is always australian."],
-      hints:["marsupial. looks like a small angry potato.","it starts with w and the answer will follow you for the rest of your life.","wombat. the answer is wombat. you're never going to forget this. that's my gift to you."]
-    }
-  },
+      validate:function(a){return a.toLowerCase().trim().indexOf("wombat")!==-1},
+      correct:["wombats. perfect cubes. like tiny dice made of regret.","someone got actual research funding to figure out why. a real person with a real degree wrote a paper about wombat poop geometry.","and now you know about it too. because you picked up fake dog poop in a backyard."],
+      wrong:["no. it's australian. because the answer to 'what animal does something inexplicable' is always australian."],
+      hints:["marsupial. looks like a small angry potato.","it starts with w and the answer will follow you for the rest of your life.","wombat. the answer is wombat. you're never going to forget this. that's my gift to you."]}},
   spider:{id:"spider",name:"spider",
     reactions:{
       first:["oh you went straight for the spider.","of course you did.","i put that one there specifically to see who'd grab it first.","and now i know."],
       early:["the spider.","interesting that you didn't flinch. or maybe you did and i'm being polite."],
-      late:["finally.","the spider was feeling neglected.","it told me. spiders do that."]
-    },
+      late:["finally.","the spider was feeling neglected.","it told me. spiders do that."]},
     puzzle:{
       prompt:["you grabbed a spider and didn't flinch. so let's talk about what actually kills things. because it's not spiders.","highest kill rate of any predator on earth. not biggest. not scariest. most successful. percentage of hunts that end in a catch.","what is it."],
-      validate:function(a){var l=a.toLowerCase().trim();return l.indexOf("dragonfl")!==-1||l.indexOf("dragon fl")!==-1;},
-      correctResponse:["dragonfly. 95 percent.","lions are at 25. your cat is honestly better than a lion.","the most lethal hunter on the planet weighs less than a paperclip and you've been waving it away from your face your entire life."],
-      wrongResponse:function(a){
-        var l=a.toLowerCase().trim();
-        var big=["lion","shark","cheetah","wolf","eagle","bear","tiger","orca","crocodile","croc","hawk","falcon","spider","snake","leopard","jaguar","panther","great white"];
-        for(var i=0;i<big.length;i++){if(l.indexOf(big[i])!==-1)return["no. you're thinking like someone who watches nature documentaries.","the real answer is something you've ignored near every pond you've ever been to."];}
-        return["no. smaller. way smaller. embarrassingly smaller."];
-      },
-      hints:["it flies. it's an insect. it's been right in front of you a hundred times.","you've seen them near water. they look like tiny helicopters. they are killing machines.","dragonfly. 95 percent kill rate. the perfect predator has been vibing near your local pond this whole time."]
-    }
-  },
+      validate:function(a){var l=a.toLowerCase().trim();return l.indexOf("dragonfl")!==-1||l.indexOf("dragon fl")!==-1},
+      correct:["dragonfly. 95 percent.","lions are at 25. your cat is honestly better than a lion.","the most lethal hunter on the planet weighs less than a paperclip and you've been waving it away from your face your entire life."],
+      wrong:function(a){var l=a.toLowerCase().trim();var big=["lion","shark","cheetah","wolf","eagle","bear","tiger","orca","crocodile","croc","hawk","falcon","spider","snake","leopard","jaguar","panther","great white"];for(var i=0;i<big.length;i++){if(l.indexOf(big[i])!==-1)return["no. you're thinking like someone who watches nature documentaries.","the real answer is something you've ignored near every pond you've ever been to."]}return["no. smaller. way smaller. embarrassingly smaller."]},
+      hints:["it flies. it's an insect. it's been right in front of you a hundred times.","you've seen them near water. they look like tiny helicopters. they are killing machines.","dragonfly. 95 percent kill rate. the perfect predator has been vibing near your local pond this whole time."]}},
   frog:{id:"frog",name:"frog",
     reactions:{
-      first:["the frog.","you started with the frog.","it's judging you. i'm judging you. we're all judging you.","...kidding. mostly."],
+      first:["the frog.","you started with the frog.","it's been watching you longer than you've been watching it."],
       early:["the frog.","look at its face. it knows something you don't.","well. it did. now you're about to know it too."],
-      late:["the frog.","look at its face. it knows what it did."]
-    },
+      late:["the frog.","look at its face. it's been waiting."]},
     puzzle:{
-      prompt:["you picked up a frog. it didn't try to stop you. that was its choice.","here's something that's going to break your brain a little.","52 cards. a normal deck. shuffled.","which is bigger \u2014 the number of ways those cards could be arranged, or the number of atoms on earth?"],
-      validate:function(a){var l=a.toLowerCase().trim();return l.indexOf("card")!==-1||l.indexOf("deck")!==-1||l.indexOf("shuffle")!==-1||l.indexOf("arrange")!==-1||l.indexOf("52")!==-1||l.indexOf("factorial")!==-1;},
-      correctResponse:["the cards. and it's not even a little bit close.","every time anyone has ever shuffled a deck of cards, they almost certainly created an arrangement that has never existed before. not once. in the entire history of the universe.","52 cards. that's all it takes to outnumber the atoms on earth."],
-      wrongResponse:["no. think about it. there are a lot of atoms. but a deck of cards is weirder than you think.","try again."],
-      hints:["one of these numbers has about 50 digits. the other has 68. i'll let you figure out which is which.","every shuffle is probably unique. every single one. ever. that should tell you something.","cards. it's always the cards. the universe is big but a deck of cards is bigger. mathematically. i don't make the rules."]
-    }
-  }
+      prompt:["here's something that's going to break your brain a little.","52 cards. a normal deck. shuffled.","which is bigger \u2014 the number of ways those cards could be arranged, or the number of atoms on earth?"],
+      validate:function(a){var l=a.toLowerCase().trim();return l.indexOf("card")!==-1||l.indexOf("deck")!==-1||l.indexOf("shuffle")!==-1||l.indexOf("arrange")!==-1||l.indexOf("52")!==-1||l.indexOf("factorial")!==-1},
+      correct:["the cards. and it's not even a little bit close.","every time anyone has ever shuffled a deck of cards, they almost certainly created an arrangement that has never existed before. not once. in the entire history of the universe.","52 cards. that's all it takes to outnumber the atoms on earth."],
+      wrong:["no. think about it. there are a lot of atoms. but a deck of cards is weirder than you think.","try again."],
+      hints:["one of these numbers has about 50 digits. the other has 68. i'll let you figure out which is which.","every shuffle is probably unique. every single one. ever. that should tell you something.","cards. it's always the cards. the universe is big but a deck of cards is bigger. mathematically. i don't make the rules."]}}
 };
 
 var INTRO=["oh. you found it.","there are six objects in this yard. they're not easter eggs.","find one. tap it. i'll know.","do what i ask and i'll make it worth your time.","go."];
 var CLOTHES=["this isn't part of the game. i just want to know.","which one of you has gone the longest without changing clothes. don't answer. just look at each other.","...that was fast. and unanimous. wow.","that one wasn't mine, by the way. it was already in here when i showed up."];
 var COMPLETE={
-  noHints:["...","you did all six.","without asking for help.","i don't \u2014 that doesn't happen. people always ask.","okay. i underestimated you. that's not easy for me to say.","go find the person who sent you out here. they have something for you.","you earned it. don't make it weird."],
-  someHints:["...","all six. done.","you needed a little help. that's fine. asking for help is actually \u2014","no. i'm not going to give you a life lesson. you did the thing.","go find the person who sent you out here. they have something for you.","go get it before i change my mind."],
-  manyHints:["...","technically, you finished.","with... a lot of help. from me. which i provided. generously.","look, the point isn't how you got here. the point is you kept going.","go find the person who sent you out here. they have something for you.","you're welcome."]
+  no:["...","you did all six.","without asking for help.","i don't \u2014 that doesn't happen. people always ask.","okay. i underestimated you. that's not easy for me to say.","go find the person who sent you out here. they have something for you.","you earned it. don't make it weird."],
+  some:["...","all six. done.","you needed a little help. that's fine. asking for help is actually \u2014","no. i'm not going to give you a life lesson. you did the thing.","go find the person who sent you out here. they have something for you.","go get it before i change my mind."],
+  many:["...","technically, you finished.","with... a lot of help. from me. which i provided. generously.","look, the point isn't how you got here. the point is you kept going.","go find the person who sent you out here. they have something for you.","you're welcome."]
 };
 var QUIPS={
   1:["how many of you are reading this right now.","...yeah. that's too many. one of you should be looking for the next one."],
@@ -179,224 +144,378 @@ var WRONGROCK=[
   ["at this point you're just picking up rocks as a hobby. which \u2014 honestly, respect."],
   ["still wrong. there are a finite number of rocks out here. you'll get there."]
 ];
-var IDLE_EARLY=["still looking.","take your time. i'm not going anywhere. literally.","you're walking in a pattern. i don't think you know that.","...interesting strategy.","i can see all of them from here. just so you know."];
-var IDLE_MID=["you've walked past one twice now.","i'm not going to tell you which direction to look. but i will say... down.","one of them is closer than you think. one of them isn't.","the obvious spots are obvious for a reason.","you're overthinking this. or underthinking it. hard to tell."];
-var IDLE_LATE=["at this point i'm invested.","you know they're not going to move, right. they're objects.","i believe in you. don't make me regret saying that.","look where you haven't looked. that's free advice. you're welcome.","...are you just enjoying the walk? because that's fine too. i guess."];
-var GLITCH_LINES=["y\u0336o\u0336u\u0305 fo\u0336u\u0336n\u0305d \u2014 n\u0336o\u0305. wait.","\ud83c\udf89 Great job! You're halfway there! Keep searching for more Easter fun! \ud83c\udf89","i\u0336 d\u0336on\u0305't \u2014 th\u0336at\u0305's not \u2014"];
-var geocacheKeys=Object.keys(GEOCACHES);
+var IDLE_E=["still looking.","take your time. i'm not going anywhere. literally.","you're walking in a pattern. i don't think you know that.","...interesting strategy.","i can see all of them from here. just so you know."];
+var IDLE_M=["you've walked past one twice now.","i'm not going to tell you which direction to look. but i will say... down.","one of them is closer than you think. one of them isn't.","the obvious spots are obvious for a reason.","you're overthinking this. or underthinking it. hard to tell."];
+var IDLE_L=["at this point i'm invested.","you know they're not going to move, right. they're objects.","i believe in you. don't make me regret saying that.","look where you haven't looked. that's free advice. you're welcome.","...are you just enjoying the walk? because that's fine too. i guess."];
+var GLITCH=["y\u0336o\u0336u\u0305 fo\u0336u\u0336n\u0305d \u2014 n\u0336o\u0305. wait.","\ud83c\udf89 Great job! You're halfway there! Keep searching for more Easter fun! \ud83c\udf89","i\u0336 d\u0336on\u0305't \u2014 th\u0336at\u0305's not \u2014"];
 
-function playGlitchTone(){try{var c=new(window.AudioContext||window.webkitAudioContext)();var o=c.createOscillator();var g=c.createGain();o.type="sine";o.frequency.value=80;g.gain.value=0.15;o.connect(g);g.connect(c.destination);o.start();g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.8);o.stop(c.currentTime+0.8);}catch(x){}}
-function vibrate(p){try{navigator.vibrate(p);}catch(x){}}
+var KEYS=Object.keys(GC);
 
-function Scanner(props){
+function playTone(){try{var c=new(window.AudioContext||window.webkitAudioContext)();var o=c.createOscillator();var g=c.createGain();o.type="sine";o.frequency.value=80;g.gain.value=0.15;o.connect(g);g.connect(c.destination);o.start();g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.8);o.stop(c.currentTime+0.8)}catch(x){}}
+function vib(p){try{navigator.vibrate(p)}catch(x){}}
+
+// SCANNER
+function Scanner(p){
   return e("div",{style:{position:"relative",width:"120px",height:"120px",margin:"30px auto 10px auto"}},
     e("div",{style:{position:"absolute",top:0,left:0,right:0,bottom:0,borderRadius:"50%",border:"1px solid #1a1a1a",animation:"scanPulse 3s ease-out infinite"}}),
     e("div",{style:{position:"absolute",top:0,left:0,right:0,bottom:0,borderRadius:"50%",border:"1px solid #1a1a1a",animation:"scanPulse 3s ease-out 1s infinite"}}),
     e("div",{style:{position:"absolute",top:0,left:0,right:0,bottom:0,borderRadius:"50%",border:"1px solid #1a1a1a",animation:"scanPulse 3s ease-out 2s infinite"}}),
     e("div",{style:{position:"absolute",top:"15px",left:"15px",right:"15px",bottom:"15px",borderRadius:"50%",border:"1px dashed #222",animation:"scanRotate 12s linear infinite"}}),
     e("div",{style:{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",textAlign:"center"}},
-      e("div",{style:{fontSize:"22px",color:"#c8c8c8",fontWeight:"bold",lineHeight:"1"}},props.remaining),
-      e("div",{style:{fontSize:"10px",color:"#444",textTransform:"uppercase",letterSpacing:"2px",marginTop:"4px"}},"remain")
-    )
-  );
+      e("div",{style:{fontSize:"22px",color:"#c8c8c8",fontWeight:"bold",lineHeight:"1"}},p.n),
+      e("div",{style:{fontSize:"10px",color:"#444",textTransform:"uppercase",letterSpacing:"2px",marginTop:"4px"}},"remain")))
 }
 
+// APP
 function App(){
-  var saved=React.useMemo(function(){return loadState();},[]);
-  var playerName=initName||(saved&&saved.playerName)||null;
-  var gs=useState(saved&&saved.gameState?saved.gameState:"intro"),gameState=gs[0],setGameState=gs[1];
-  var dl=useState(saved&&saved.displayedLines?saved.displayedLines:[]),displayedLines=dl[0],setDisplayedLines=dl[1];
-  var fg=useState(saved&&saved.foundGeocaches?saved.foundGeocaches:[]),foundGeocaches=fg[0],setFoundGeocaches=fg[1];
-  var sp=useState(saved&&saved.solvedPuzzles?saved.solvedPuzzles:[]),solvedPuzzles=sp[0],setSolvedPuzzles=sp[1];
-  var cp=useState(null),currentPuzzle=cp[0],setCurrentPuzzle=cp[1];
-  var hu=useState(saved&&saved.hintsUsed?saved.hintsUsed:{}),hintsUsed=hu[0],setHintsUsed=hu[1];
-  var th=useState(saved&&saved.totalHints?saved.totalHints:0),totalHints=th[0],setTotalHints=th[1];
-  var iv=useState(""),inputValue=iv[0],setInputValue=iv[1];
-  var _it=useState(false),isTyping=_it[0],setIsTyping=_it[1];
-  var si=useState(false),showInput=si[0],setShowInput=si[1];
-  var sh=useState(false),showHintBtn=sh[0],setShowHintBtn=sh[1];
-  var _se=useState(false),showExploring=_se[0],setShowExploring=_se[1];
-  var ca=useState(saved?!!saved.clothesDone:false),clothesDone=ca[0],setClothesDone=ca[1];
-  var wr=useState(saved&&saved.wrongRocks?saved.wrongRocks:0),wrongRocks=wr[0],setWrongRocks=wr[1];
-  var _il=useState(null),idleLine=_il[0],setIdleLine=_il[1];
-  var _gd=useState(saved?!!saved.glitchDone:false),glitchDone=_gd[0],setGlitchDone=_gd[1];
-  var _nd=useState(saved?!!saved.nameUsed:false),nameUsed=_nd[0],setNameUsed=_nd[1];
-  var _cc=useState(saved?!!saved.cheatingCaught:false),cheatingCaught=_cc[0],setCheatingCaught=_cc[1];
-  var _bo=useState(false),isBlackout=_bo[0],setIsBlackout=_bo[1];
-  var _fl=useState(false),isFlash=_fl[0],setIsFlash=_fl[1];
-  var _gli=useState(false),isGlitching=_gli[0],setIsGlitching=_gli[1];
-  var _gh=useState(null),ghostLine=_gh[0],setGhostLine=_gh[1];
-  var _ta=useState(false),tabbedAway=_ta[0],setTabbedAway=_ta[1];
+  var saved=useMemo(function(){return load()},[]);
+  var pName=getName();
+
+  // ALL STATE - initialized from saved or defaults
+  var _gs=useState(saved?saved.gs||"exploring":"intro"),gs=_gs[0],setGs=_gs[1];
+  var _lines=useState(saved?saved.lines||[]:[]),lines=_lines[0],setLines=_lines[1];
+  var _found=useState(saved?saved.found||[]:[]),found=_found[0],setFound=_found[1];
+  var _solved=useState(saved?saved.solved||[]:[]),solved=_solved[0],setSolved=_solved[1];
+  var _cur=useState(null),cur=_cur[0],setCur=_cur[1];
+  var _hu=useState(saved?saved.hu||{}:{}),hu=_hu[0],setHu=_hu[1];
+  var _th=useState(saved?saved.th||0:0),th=_th[0],setTh=_th[1];
+  var _inp=useState(""),inp=_inp[0],setInp=_inp[1];
+  var _typing=useState(false),typing=_typing[0],setTyping=_typing[1];
+  var _showInp=useState(false),showInp=_showInp[0],setShowInp=_showInp[1];
+  var _showHint=useState(false),showHint=_showHint[0],setShowHint=_showHint[1];
+  var _showExp=useState(false),showExp=_showExp[0],setShowExp=_showExp[1];
+  var _clothesDone=useState(saved?!!saved.cd:false),clothesDone=_clothesDone[0],setClDone=_clothesDone[1];
+  var _wr=useState(saved?saved.wr||0:0),wr=_wr[0],setWr=_wr[1];
+  var _idle=useState(null),idle=_idle[0],setIdle=_idle[1];
+  var _gDone=useState(saved?!!saved.gd:false),gDone=_gDone[0],setGDone=_gDone[1];
+  var _nUsed=useState(saved?!!saved.nu:false),nUsed=_nUsed[0],setNUsed=_nUsed[1];
+  var _cheat=useState(saved?!!saved.cc:false),cheat=_cheat[0],setCheat=_cheat[1];
+  var _black=useState(false),black=_black[0],setBlack=_black[1];
+  var _flash=useState(false),flash=_flash[0],setFlash=_flash[1];
+  var _glitch=useState(false),glitching=_glitch[0],setGlitch=_glitch[1];
+  var _ghost=useState(null),ghost=_ghost[0],setGhost=_ghost[1];
+  var _tabbed=useState(false),tabbed=_tabbed[0],setTabbed=_tabbed[1];
+
   var initDone=useRef(false);
-  var pendingFind=useRef(initFind?initFind.toLowerCase():null);
-  var bottomRef=useRef(null);
-  var gameStateRef=useRef(gameState);
-  var foundRef=useRef(foundGeocaches);
-  var solvedRef=useRef(solvedPuzzles);
-  var typingRef=useRef(false);
-  var idleTimer=useRef(null);
-  var idleCount=useRef(0);
+  var pending=useRef(_find?_find.toLowerCase():null);
+  var btm=useRef(null);
+  var gsR=useRef(gs);
+  var foundR=useRef(found);
+  var solvedR=useRef(solved);
+  var typR=useRef(false);
+  var idleTmr=useRef(null);
+  var idleCnt=useRef(0);
   var idleUsed=useRef([]);
 
-  useEffect(function(){gameStateRef.current=gameState;},[gameState]);
-  useEffect(function(){foundRef.current=foundGeocaches;},[foundGeocaches]);
-  useEffect(function(){solvedRef.current=solvedPuzzles;},[solvedPuzzles]);
-  useEffect(function(){typingRef.current=isTyping;},[isTyping]);
+  useEffect(function(){gsR.current=gs},[gs]);
+  useEffect(function(){foundR.current=found},[found]);
+  useEffect(function(){solvedR.current=solved},[solved]);
+  useEffect(function(){typR.current=typing},[typing]);
+
+  // PERSIST
   useEffect(function(){
-    if(gameState==="intro")return;
-    saveState({gameState:gameState==="puzzle"?"exploring":gameState,displayedLines:displayedLines.slice(-50),foundGeocaches:foundGeocaches,solvedPuzzles:solvedPuzzles,hintsUsed:hintsUsed,totalHints:totalHints,clothesDone:clothesDone,wrongRocks:wrongRocks,glitchDone:glitchDone,nameUsed:nameUsed,cheatingCaught:cheatingCaught,playerName:playerName});
-  },[gameState,foundGeocaches,solvedPuzzles,hintsUsed,totalHints,clothesDone,wrongRocks,glitchDone,nameUsed,cheatingCaught]);
-  useEffect(function(){if(bottomRef.current)bottomRef.current.scrollIntoView({behavior:"smooth"});},[displayedLines,showInput,showExploring,isBlackout]);
+    if(gs==="intro")return;
+    save({gs:gs==="puzzle"?"exploring":gs,lines:lines.slice(-40),found:found,solved:solved,hu:hu,th:th,cd:clothesDone,wr:wr,gd:gDone,nu:nUsed,cc:cheat})
+  },[gs,found,solved,hu,th,clothesDone,wr,gDone,nUsed,cheat]);
 
-  function startIdleTimer(){stopIdleTimer();idleCount.current=0;scheduleNextIdle();}
-  function stopIdleTimer(){if(idleTimer.current){clearTimeout(idleTimer.current);idleTimer.current=null;}}
-  function pickUnused(pool){var a=pool.filter(function(l){return idleUsed.current.indexOf(l)===-1;});if(a.length===0){idleUsed.current=[];a=pool;}var p=a[Math.floor(Math.random()*a.length)];idleUsed.current.push(p);return p;}
-  function scheduleNextIdle(){var b=idleCount.current===0?25000:30000;var j=Math.random()*(idleCount.current===0?10000:15000);idleTimer.current=setTimeout(function(){if(gameStateRef.current!=="exploring")return;var pool=idleCount.current<2?IDLE_EARLY:idleCount.current<4?IDLE_MID:IDLE_LATE;setIdleLine(pickUnused(pool));idleCount.current++;setTimeout(function(){setIdleLine(null);if(gameStateRef.current==="exploring")scheduleNextIdle();},8000);},b+j);}
+  // SCROLL
+  useEffect(function(){if(btm.current)btm.current.scrollIntoView({behavior:"smooth"})},[lines,showInp,showExp,black]);
 
-  var displayLines=useCallback(function(lines,onComplete,slow){
-    if(!lines||lines.length===0){if(onComplete)onComplete();return;}
-    var i=0;setIsTyping(true);
-    function showNext(){
-      if(i<lines.length){setDisplayedLines(function(p){return p.concat([lines[i]||""]);});i++;var prev=lines[i-1]||"";var delay=slow?500:(prev==="..."?500:prev.length<10?250:400);setTimeout(showNext,delay);}
-      else{setIsTyping(false);if(onComplete)onComplete();}
-    }showNext();
-  },[]);
+  // IDLE
+  function startIdle(){stopIdle();idleCnt.current=0;nextIdle()}
+  function stopIdle(){if(idleTmr.current){clearTimeout(idleTmr.current);idleTmr.current=null}}
+  function pickU(pool){var a=pool.filter(function(l){return idleUsed.current.indexOf(l)===-1});if(!a.length){idleUsed.current=[];a=pool}var p=a[Math.floor(Math.random()*a.length)];idleUsed.current.push(p);return p}
+  function nextIdle(){
+    var b=idleCnt.current===0?25000:30000;
+    var j=Math.random()*(idleCnt.current===0?10000:15000);
+    idleTmr.current=setTimeout(function(){
+      if(gsR.current!=="exploring")return;
+      var pool=idleCnt.current<2?IDLE_E:idleCnt.current<4?IDLE_M:IDLE_L;
+      setIdle(pickU(pool));idleCnt.current++;
+      setTimeout(function(){setIdle(null);if(gsR.current==="exploring")nextIdle()},8000)
+    },b+j)
+  }
 
-  function enterExploring(){setGameState("exploring");setShowExploring(true);setIdleLine(null);startIdleTimer();}
-  function leaveExploring(){setShowExploring(false);setIdleLine(null);stopIdleTimer();}
-
-  useEffect(function(){function onVis(){if(document.hidden&&gameStateRef.current==="puzzle")setTabbedAway(true);}document.addEventListener("visibilitychange",onVis);return function(){document.removeEventListener("visibilitychange",onVis);};},[]);
-
-  useEffect(function(){
-    if(initDone.current)return;initDone.current=true;
-    var hasSaved=saved&&((saved.solvedPuzzles&&saved.solvedPuzzles.length>0)||(saved.foundGeocaches&&saved.foundGeocaches.length>0));
-    if(hasSaved){
-      if(pendingFind.current){var fid=pendingFind.current;pendingFind.current=null;setDisplayedLines([]);displayLines(["you're back.","where were we. right."],function(){enterExploring();setTimeout(function(){triggerFind(fid);},300);});}
-      else{setDisplayedLines([]);displayLines(["...you're still here. good."],function(){enterExploring();});}
-    }else{
-      setTimeout(function(){displayLines(INTRO,function(){enterExploring();if(pendingFind.current){var id=pendingFind.current;pendingFind.current=null;setTimeout(function(){triggerFind(id);},400);}});},600);
+  // TYPING ENGINE
+  var type=useCallback(function(arr,cb,slow){
+    if(!arr||!arr.length){if(cb)cb();return}
+    var i=0;setTyping(true);
+    function go(){
+      if(i<arr.length){
+        var line=arr[i]||"";
+        setLines(function(p){return p.concat([line])});
+        i++;
+        var prev=arr[i-1]||"";
+        var d=slow?500:(prev==="..."?500:prev.length<10?250:400);
+        setTimeout(go,d)
+      }else{setTyping(false);if(cb)cb()}
     }
-    return function(){stopIdleTimer();};
+    go()
   },[]);
 
+  function goExplore(){setGs("exploring");setShowExp(true);setIdle(null);startIdle()}
+  function leaveExplore(){setShowExp(false);setIdle(null);stopIdle()}
+
+  // TAB DETECTION
   useEffect(function(){
-    function handleFocus(){var params=new URLSearchParams(window.location.search);var find=params.get("find");if(find){window.history.replaceState({},"",window.location.pathname);if(gameStateRef.current==="exploring"&&!typingRef.current){triggerFind(find.toLowerCase());}else{pendingFind.current=find.toLowerCase();}}}
-    function handlePageShow(ev){if(ev.persisted)handleFocus();}
-    window.addEventListener("focus",handleFocus);window.addEventListener("pageshow",handlePageShow);
-    return function(){window.removeEventListener("focus",handleFocus);window.removeEventListener("pageshow",handlePageShow);};
+    function v(){if(document.hidden&&gsR.current==="puzzle")setTabbed(true)}
+    document.addEventListener("visibilitychange",v);
+    return function(){document.removeEventListener("visibilitychange",v)}
   },[]);
 
-  function triggerFind(id){leaveExploring();if(id==="wrongrock")handleWrongRock();else if(GEOCACHES[id])discoverGeocache(id);}
+  // INIT
+  useEffect(function(){
+    if(initDone.current)return;
+    initDone.current=true;
+    var hasProgress=saved&&((saved.solved&&saved.solved.length>0)||(saved.found&&saved.found.length>0));
+    if(hasProgress){
+      // RETURNING - skip intro
+      if(pending.current){
+        var fid=pending.current;pending.current=null;
+        setLines([]);
+        type(["you're back.","where were we. right."],function(){
+          goExplore();
+          setTimeout(function(){doFind(fid)},300)
+        })
+      }else{
+        setLines([]);
+        type(["...you're still here. good."],function(){goExplore()})
+      }
+    }else{
+      // FRESH
+      setTimeout(function(){
+        type(INTRO,function(){
+          goExplore();
+          if(pending.current){
+            var id=pending.current;pending.current=null;
+            setTimeout(function(){doFind(id)},400)
+          }
+        })
+      },600)
+    }
+    return function(){stopIdle()}
+  },[]);
 
-  function handleWrongRock(){var idx=Math.min(wrongRocks,WRONGROCK.length-1);setWrongRocks(function(p){return p+1;});setDisplayedLines([]);displayLines(WRONGROCK[idx],function(){enterExploring();});}
+  // NFC LISTENER
+  useEffect(function(){
+    function hf(){
+      var p=new URLSearchParams(window.location.search);
+      var f=p.get("find");
+      if(f){
+        window.history.replaceState({},"",window.location.pathname);
+        if(gsR.current==="exploring"&&!typR.current)doFind(f.toLowerCase());
+        else pending.current=f.toLowerCase()
+      }
+    }
+    function ps(ev){if(ev.persisted)hf()}
+    window.addEventListener("focus",hf);
+    window.addEventListener("pageshow",ps);
+    return function(){window.removeEventListener("focus",hf);window.removeEventListener("pageshow",ps)}
+  },[]);
 
-  function runGlitch(cb){
-    setGlitchDone(true);setDisplayedLines([]);setIsGlitching(true);
-    vibrate([20,50,20,50,20,100,40]);playGlitchTone();
-    displayLines(GLITCH_LINES,function(){
-      setIsGlitching(false);setIsBlackout(true);
-      setTimeout(function(){setIsBlackout(false);setDisplayedLines([]);
-        displayLines(["...no.","that's not \u2014 ignore that. the old version is still in here somewhere.","it's fine. keep going."],function(){setTimeout(cb,400);});
-      },2000);
-    });
+  // FIND
+  function doFind(id){
+    leaveExplore();
+    if(id==="wrongrock")doWrongRock();
+    else if(GC[id])doGeo(id);
+    else goExplore()
   }
 
-  function maybeClothes(solvedCount,cb){
-    if(!clothesDone&&solvedCount===3){setClothesDone(true);displayLines(CLOTHES,function(){setTimeout(cb,600);});return;}
-    if(!glitchDone&&solvedCount===4){runGlitch(cb);return;}
-    if(QUIPS[solvedCount]){displayLines(QUIPS[solvedCount],function(){setTimeout(cb,300);});return;}
-    cb();
+  function doWrongRock(){
+    var idx=Math.min(wr,WRONGROCK.length-1);
+    setWr(function(p){return p+1});
+    setLines([]);
+    type(WRONGROCK[idx],function(){goExplore()})
   }
 
-  function discoverGeocache(geocacheId){
-    var gc=GEOCACHES[geocacheId];if(!gc)return;
-    if(solvedRef.current.indexOf(geocacheId)!==-1){setDisplayedLines([]);displayLines(["you already did this one. i remember even if you don't."],function(){enterExploring();});return;}
-    if(foundRef.current.indexOf(geocacheId)!==-1){setDisplayedLines([]);displayLines(["we were in the middle of this one. let me ask again."],function(){setCurrentPuzzle(geocacheId);setGameState("puzzle");displayLines(gc.puzzle.prompt,function(){setShowInput(true);setShowHintBtn(true);});});return;}
-    setFoundGeocaches(function(p){return p.concat([geocacheId]);});
-    var foundCount=foundRef.current.length;var isLast=solvedRef.current.length===5;
-    setDisplayedLines([]);
+  // GLITCH
+  function doGlitch(cb){
+    setGDone(true);setLines([]);setGlitch(true);
+    vib([20,50,20,50,20,100,40]);playTone();
+    type(GLITCH,function(){
+      setGlitch(false);setBlack(true);
+      setTimeout(function(){
+        setBlack(false);setLines([]);
+        type(["...no.","that's not \u2014 ignore that. the old version is still in here somewhere.","it's fine. keep going."],function(){setTimeout(cb,400)})
+      },2000)
+    })
+  }
+
+  // POST-SOLVE EVENTS
+  function postSolve(count,cb){
+    if(!clothesDone&&count===3){setClDone(true);type(CLOTHES,function(){setTimeout(cb,600)});return}
+    if(!gDone&&count===4){doGlitch(cb);return}
+    if(QUIPS[count]){type(QUIPS[count],function(){setTimeout(cb,300)});return}
+    cb()
+  }
+
+  // BLOCK SCANNING DURING PUZZLE
+  function doGeo(id){
+    var gc=GC[id];if(!gc)return;
+
+    // Already solved
+    if(solvedR.current.indexOf(id)!==-1){
+      setLines([]);
+      type(["you already did this one. i remember even if you don't."],function(){goExplore()});
+      return
+    }
+
+    // Must solve current puzzle first
+    if(cur!==null&&cur!==id){
+      setLines([]);
+      type(["finish what you started first."],function(){
+        // Re-show the current puzzle
+        setGs("puzzle");
+        var curGc=GC[cur];
+        type(curGc.puzzle.prompt,function(){setShowInp(true);setShowHint(true)})
+      });
+      return
+    }
+
+    // Already found but not solved - re-ask
+    if(foundR.current.indexOf(id)!==-1){
+      setLines([]);
+      type(["we were in the middle of this one. let me ask again."],function(){
+        setCur(id);setGs("puzzle");
+        type(gc.puzzle.prompt,function(){setShowInp(true);setShowHint(true)})
+      });
+      return
+    }
+
+    // NEW DISCOVERY
+    setFound(function(p){return p.concat([id])});
+    var fc=foundR.current.length;
+    var isLast=solvedR.current.length===5;
+    setLines([]);
+
     if(isLast){
-      displayLines(["so this is the last one."],function(){setTimeout(function(){displayLines(["let's make it count."],function(){setTimeout(function(){setCurrentPuzzle(geocacheId);setGameState("puzzle");displayLines(gc.puzzle.prompt,function(){setShowInput(true);setShowHintBtn(true);});},400);});},800);});
+      type(["so this is the last one."],function(){
+        setTimeout(function(){
+          type(["let's make it count."],function(){
+            setTimeout(function(){
+              setCur(id);setGs("puzzle");
+              type(gc.puzzle.prompt,function(){setShowInp(true);setShowHint(true)})
+            },400)
+          })
+        },800)
+      })
     }else{
-      var rt=foundCount===0?"first":foundCount<3?"early":"late";var reactions=gc.reactions[rt].slice();
-      if(glitchDone&&!nameUsed&&playerName){setNameUsed(true);reactions.push("you're doing well, "+playerName+". you and your boys.");}
-      displayLines(reactions,function(){setTimeout(function(){setCurrentPuzzle(geocacheId);setGameState("puzzle");displayLines(gc.puzzle.prompt,function(){setShowInput(true);setShowHintBtn(true);});},400);});
+      var rt=fc===0?"first":fc<3?"early":"late";
+      var rx=gc.reactions[rt].slice();
+      // Name drop after glitch
+      if(gDone&&!nUsed&&pName){
+        setNUsed(true);
+        rx.push("you're doing well, "+pName+". you and your boys.")
+      }
+      type(rx,function(){
+        setTimeout(function(){
+          setCur(id);setGs("puzzle");
+          type(gc.puzzle.prompt,function(){setShowInp(true);setShowHint(true)})
+        },400)
+      })
     }
   }
 
-  function submitAnswer(){
-    if(!currentPuzzle||!inputValue.trim())return;
-    var gc=GEOCACHES[currentPuzzle];var puzzle=gc.puzzle;var answer=inputValue.trim();
-    setInputValue("");setShowInput(false);setShowHintBtn(false);
-    setDisplayedLines(function(p){return p.concat(["> "+answer]);});
+  // SUBMIT
+  function submit(){
+    if(!cur||!inp.trim())return;
+    var gc=GC[cur];var pz=gc.puzzle;var ans=inp.trim();
+    setInp("");setShowInp(false);setShowHint(false);
+    setLines(function(p){return p.concat(["> "+ans])});
+
     var cheatLines=[];
-    if(tabbedAway&&!cheatingCaught){setCheatingCaught(true);setTabbedAway(false);cheatLines=["...you just looked that up, didn't you.","i'm not mad. i'm just aware."];}else{setTabbedAway(false);}
-    if(puzzle.validate(answer)){
-      vibrate([50,30,80]);setIsFlash(true);setTimeout(function(){setIsFlash(false);},300);
-      var resp=Array.isArray(puzzle.correctResponse)?puzzle.correctResponse:[puzzle.correctResponse];
-      var allLines=cheatLines.concat(resp);
-      setTimeout(function(){displayLines(allLines,function(){
-        var newSolved=solvedRef.current.concat([currentPuzzle]);setSolvedPuzzles(newSolved);setCurrentPuzzle(null);
-        if(newSolved.length===6){setTimeout(function(){completeGame();},800);}
-        else{setDisplayedLines([]);maybeClothes(newSolved.length,function(){enterExploring();if(pendingFind.current){var id=pendingFind.current;pendingFind.current=null;setTimeout(function(){triggerFind(id);},300);}});}
-      },true);},400);
+    if(tabbed&&!cheat){setCheat(true);setTabbed(false);cheatLines=["...you just looked that up, didn't you.","i'm not mad. i'm just aware."]}
+    else setTabbed(false);
+
+    if(pz.validate(ans)){
+      // CORRECT
+      vib([50,30,80]);setFlash(true);setTimeout(function(){setFlash(false)},300);
+      var resp=Array.isArray(pz.correct)?pz.correct:[pz.correct];
+      var all=cheatLines.concat(resp);
+      setTimeout(function(){
+        type(all,function(){
+          var ns=solvedR.current.concat([cur]);
+          setSolved(ns);setCur(null);
+          if(ns.length===6){setTimeout(function(){finish()},800)}
+          else{setLines([]);postSolve(ns.length,function(){
+            goExplore();
+            if(pending.current){var id=pending.current;pending.current=null;setTimeout(function(){doFind(id)},300)}
+          })}
+        },true)
+      },400)
     }else{
-      var wr2;if(typeof puzzle.wrongResponse==="function")wr2=puzzle.wrongResponse(answer);else if(Array.isArray(puzzle.wrongResponse))wr2=puzzle.wrongResponse;else wr2=[puzzle.wrongResponse];
-      var allWrong=cheatLines.concat(wr2);
-      setTimeout(function(){displayLines(allWrong,function(){setShowInput(true);setShowHintBtn(true);});},300);
+      // WRONG
+      var wr2;
+      if(typeof pz.wrong==="function")wr2=pz.wrong(ans);
+      else if(Array.isArray(pz.wrong))wr2=pz.wrong;
+      else wr2=[pz.wrong];
+      var allW=cheatLines.concat(wr2);
+      setTimeout(function(){type(allW,function(){setShowInp(true);setShowHint(true)})},300)
     }
   }
 
-  function requestHint(){
-    if(!currentPuzzle)return;var gc=GEOCACHES[currentPuzzle];var count=hintsUsed[currentPuzzle]||0;
-    if(count>=gc.puzzle.hints.length)return;var text=gc.puzzle.hints[count];
-    setHintsUsed(function(p){var n={};for(var k in p)n[k]=p[k];n[currentPuzzle]=count+1;return n;});
-    setTotalHints(function(p){return p+1;});setShowInput(false);setShowHintBtn(false);
-    var prefix=count===0?["...fine."]:count===1?["this is the part where i try not to be judgmental."]:["we're not going to talk about how many times you've asked."];
-    displayLines(prefix.concat([text]),function(){setShowInput(true);if(count+1<gc.puzzle.hints.length)setShowHintBtn(true);});
+  function hint(){
+    if(!cur)return;var gc=GC[cur];var c=hu[cur]||0;
+    if(c>=gc.puzzle.hints.length)return;
+    var t=gc.puzzle.hints[c];
+    setHu(function(p){var n={};for(var k in p)n[k]=p[k];n[cur]=c+1;return n});
+    setTh(function(p){return p+1});
+    setShowInp(false);setShowHint(false);
+    var pre=c===0?["...fine."]:c===1?["this is the part where i try not to be judgmental."]:["we're not going to talk about how many times you've asked."];
+    type(pre.concat([t]),function(){setShowInp(true);if(c+1<gc.puzzle.hints.length)setShowHint(true)})
   }
 
-  function completeGame(){
-    clearState();setDisplayedLines([]);
-    var msgs=totalHints===0?COMPLETE.noHints:totalHints<=3?COMPLETE.someHints:COMPLETE.manyHints;
-    var finalMsgs=msgs.concat(["if she asks about the voice, tell her everything worked perfectly."]);
-    displayLines(finalMsgs,function(){setGameState("complete");setTimeout(function(){setGhostLine("you're still here.");},60000);},true);
+  function finish(){
+    clear();setLines([]);
+    var msgs=th===0?COMPLETE.no:th<=3?COMPLETE.some:COMPLETE.many;
+    var final=msgs.concat(["if she asks about the voice, tell her everything worked perfectly."]);
+    type(final,function(){setGs("complete");setTimeout(function(){setGhost("you're still here.")},60000)},true)
   }
 
-  var remaining=6-solvedPuzzles.length;
-  if(isBlackout){return e("div",{style:{minHeight:"100vh",minHeight:"100dvh",backgroundColor:"#0a0a0a"}});}
+  var rem=6-solved.length;
 
-  return e("div",{style:{minHeight:"100vh",minHeight:"100dvh",backgroundColor:isFlash?"#151515":"#0a0a0a",color:"#c8c8c8",fontFamily:"'Courier New', Courier, monospace",fontSize:"15px",lineHeight:"1.6",padding:"20px 16px",maxWidth:"100%",boxSizing:"border-box",position:"relative",transition:"background-color 0.15s ease"}},
+  // RENDER
+  if(black)return e("div",{style:{minHeight:"100vh",minHeight:"100dvh",backgroundColor:"#0a0a0a"}});
+
+  return e("div",{style:{minHeight:"100vh",minHeight:"100dvh",backgroundColor:flash?"#151515":"#0a0a0a",color:"#c8c8c8",fontFamily:"'Courier New',Courier,monospace",fontSize:"15px",lineHeight:"1.6",padding:"20px 16px",maxWidth:"100%",boxSizing:"border-box",position:"relative",transition:"background-color 0.15s ease"}},
+    // LINES
     e("div",{style:{paddingBottom:"20px"}},
-      displayedLines.map(function(line,i){
-        if(line===null||line===undefined)return null;
-        if(line==="---")return e("hr",{key:"l"+i,style:{border:"none",borderTop:"1px solid #1a1a1a",margin:"24px 0"}});
-        if(typeof line==="string"&&line.indexOf("> ")===0)return e("p",{key:"l"+i,style:{margin:0,padding:"2px 0",opacity:0,animation:"fadeIn 0.4s ease forwards",color:"#555",fontSize:"14px"}},line);
-        if(isGlitching&&line.indexOf("\ud83c\udf89")!==-1)return e("p",{key:"l"+i,style:{margin:0,padding:"2px 0",opacity:0,animation:"fadeIn 0.4s ease forwards",color:"#4a9",fontSize:"14px",fontStyle:"italic"}},line);
-        if(isGlitching)return e("p",{key:"l"+i,style:{margin:0,padding:"2px 0",opacity:0,animation:"glitchText 0.3s ease infinite, fadeIn 0.4s ease forwards",color:"#884444"}},line);
-        return e("p",{key:"l"+i,style:{margin:0,padding:"2px 0",opacity:0,animation:"fadeIn 0.4s ease forwards"}},line);
+      lines.map(function(l,i){
+        if(l==null)return null;
+        if(l==="---")return e("hr",{key:"l"+i,style:{border:"none",borderTop:"1px solid #1a1a1a",margin:"24px 0"}});
+        if(typeof l==="string"&&l.indexOf("> ")===0)return e("p",{key:"l"+i,style:{margin:0,padding:"2px 0",opacity:0,animation:"fadeIn 0.4s ease forwards",color:"#555",fontSize:"14px"}},l);
+        if(glitching&&l.indexOf("\ud83c\udf89")!==-1)return e("p",{key:"l"+i,style:{margin:0,padding:"2px 0",opacity:0,animation:"fadeIn 0.4s ease forwards",color:"#4a9",fontSize:"14px",fontStyle:"italic"}},l);
+        if(glitching)return e("p",{key:"l"+i,style:{margin:0,padding:"2px 0",opacity:0,animation:"glitchText 0.3s ease infinite, fadeIn 0.4s ease forwards",color:"#884444"}},l);
+        return e("p",{key:"l"+i,style:{margin:0,padding:"2px 0",opacity:0,animation:"fadeIn 0.4s ease forwards"}},l)
       }),
-      isTyping?e("span",{style:{display:"inline-block",width:"8px",height:"15px",backgroundColor:"#c8c8c8",marginLeft:"2px",marginTop:"4px",animation:"blink 1s step-end infinite"}}):null,
-      ghostLine?e("p",{style:{margin:0,padding:"2px 0",color:"#333",marginTop:"40px"}},ghostLine):null
+      typing?e("span",{style:{display:"inline-block",width:"8px",height:"15px",backgroundColor:"#c8c8c8",marginLeft:"2px",marginTop:"4px",animation:"blink 1s step-end infinite"}}):null,
+      ghost?e("p",{style:{margin:0,padding:"2px 0",color:"#333",marginTop:"40px"}},ghost):null
     ),
-    showExploring&&!isTyping&&gameState==="exploring"&&remaining>0?e("div",{style:{opacity:0,animation:"fadeIn 0.6s ease 0.3s forwards"}},
-      e(Scanner,{remaining:remaining}),
-      idleLine?e("p",{key:"idle-"+idleLine,style:{textAlign:"center",color:"#444",fontSize:"13px",marginTop:"16px",fontStyle:"italic",opacity:0,animation:"fadeIn 0.6s ease forwards"}},idleLine):e("p",{style:{textAlign:"center",color:"#2a2a2a",fontSize:"12px",marginTop:"16px",letterSpacing:"1px",animation:"idleFade 4s ease-in-out infinite"}},"scanning")
+    // EXPLORING
+    showExp&&!typing&&gs==="exploring"&&rem>0?e("div",{style:{opacity:0,animation:"fadeIn 0.6s ease 0.3s forwards"}},
+      e(Scanner,{n:rem}),
+      idle?e("p",{key:"i-"+idle,style:{textAlign:"center",color:"#444",fontSize:"13px",marginTop:"16px",fontStyle:"italic",opacity:0,animation:"fadeIn 0.6s ease forwards"}},idle)
+        :e("p",{style:{textAlign:"center",color:"#2a2a2a",fontSize:"12px",marginTop:"16px",letterSpacing:"1px",animation:"idleFade 4s ease-in-out infinite"}},"scanning")
     ):null,
-    showInput&&!isTyping&&gameState==="puzzle"?e("div",{style:{marginTop:"16px",display:"flex",flexDirection:"column",gap:"10px"}},
-      e("input",{style:{backgroundColor:"#111",border:"1px solid #333",color:"#c8c8c8",fontFamily:"'Courier New', Courier, monospace",fontSize:"16px",padding:"12px",borderRadius:0,outline:"none",width:"100%",boxSizing:"border-box",WebkitAppearance:"none"},type:"text",value:inputValue,onChange:function(ev){setInputValue(ev.target.value);},onKeyDown:function(ev){if(ev.key==="Enter")submitAnswer();},placeholder:"...",autoFocus:true,autoComplete:"off",autoCapitalize:"off",spellCheck:false}),
+    // INPUT
+    showInp&&!typing&&gs==="puzzle"?e("div",{style:{marginTop:"16px",display:"flex",flexDirection:"column",gap:"10px"}},
+      e("input",{style:{backgroundColor:"#111",border:"1px solid #333",color:"#c8c8c8",fontFamily:"'Courier New',Courier,monospace",fontSize:"16px",padding:"12px",borderRadius:0,outline:"none",width:"100%",boxSizing:"border-box",WebkitAppearance:"none"},type:"text",value:inp,onChange:function(ev){setInp(ev.target.value)},onKeyDown:function(ev){if(ev.key==="Enter")submit()},placeholder:"...",autoFocus:true,autoComplete:"off",autoCapitalize:"off",spellCheck:false}),
       e("div",{style:{display:"flex",gap:"12px",alignItems:"center"}},
-        e("button",{style:{backgroundColor:"transparent",border:"1px solid #444",color:"#888",fontFamily:"'Courier New', Courier, monospace",fontSize:"13px",padding:"10px 20px",cursor:"pointer"},onClick:submitAnswer},"submit"),
-        showHintBtn?e("button",{style:{backgroundColor:"transparent",border:"1px solid #2a2a2a",color:"#444",fontFamily:"'Courier New', Courier, monospace",fontSize:"12px",padding:"8px 14px",cursor:"pointer"},onClick:requestHint},"i need help"):null
-      )
+        e("button",{style:{backgroundColor:"transparent",border:"1px solid #444",color:"#888",fontFamily:"'Courier New',Courier,monospace",fontSize:"13px",padding:"10px 20px",cursor:"pointer"},onClick:submit},"submit"),
+        showHint?e("button",{style:{backgroundColor:"transparent",border:"1px solid #2a2a2a",color:"#444",fontFamily:"'Courier New',Courier,monospace",fontSize:"12px",padding:"8px 14px",cursor:"pointer"},onClick:hint},"i need help"):null)
     ):null,
-    !isBlackout?e("div",{style:{position:"fixed",bottom:0,left:0,right:0,display:"flex",justifyContent:"center",gap:"12px",padding:"14px 12px",paddingBottom:"max(14px, env(safe-area-inset-bottom))",backgroundColor:"#0a0a0aee",borderTop:"1px solid #111"}},
-      geocacheKeys.map(function(id){var solved=solvedPuzzles.indexOf(id)!==-1;var found=foundGeocaches.indexOf(id)!==-1;return e("div",{key:id,style:{width:"8px",height:"8px",borderRadius:"50%",backgroundColor:solved?"#c8c8c8":found?"#444":"#1a1a1a",transition:"all 0.4s ease",animation:solved?"pulseDot 0.6s ease":"none"}});})
+    // DOTS
+    !black?e("div",{style:{position:"fixed",bottom:0,left:0,right:0,display:"flex",justifyContent:"center",gap:"12px",padding:"14px 12px",paddingBottom:"max(14px, env(safe-area-inset-bottom))",backgroundColor:"#0a0a0aee",borderTop:"1px solid #111"}},
+      KEYS.map(function(id){
+        var s=solved.indexOf(id)!==-1;var f=found.indexOf(id)!==-1;
+        return e("div",{key:id,style:{width:"8px",height:"8px",borderRadius:"50%",backgroundColor:s?"#c8c8c8":f?"#444":"#1a1a1a",transition:"all 0.4s ease",animation:s?"pulseDot 0.6s ease":"none"}})
+      })
     ):null,
-    e("div",{ref:bottomRef,style:{height:"80px"}})
-  );
+    e("div",{ref:btm,style:{height:"80px"}}))
 }
+
 ReactDOM.render(e(App),document.getElementById("root"));
+})();
 </script>
 </body>
 </html>
