@@ -3,23 +3,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Hunt</title>
 
 <style>
-body {
-  background:#0a0a0a;
-  color:#c8c8c8;
-  font-family:Courier New, monospace;
-  padding:20px;
-}
-button,input {
-  background:#111;
-  border:1px solid #333;
-  color:#c8c8c8;
-  padding:10px;
-  margin:4px;
-}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#c8c8c8;font-family:Courier New,monospace;padding:20px}
+button,input{background:#111;border:1px solid #333;color:#c8c8c8;padding:10px;margin:4px}
 </style>
 
 </head>
@@ -32,69 +22,71 @@ button,input {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 
 <script>
+(function(){
+
 const {useState,useEffect,useRef} = React;
 const e = React.createElement;
 
-const KEY = "hunt_state";
+// ✅ FIX 1: persistent storage (no NFC reset)
+const KEY="gch_v3";
 
-// SAFE LOAD
-function load(){
-  try{
-    const data = localStorage.getItem(KEY);
-    return data ? JSON.parse(data) : null;
-  }catch{
-    return null;
-  }
+function save(s){
+  try{localStorage.setItem(KEY,JSON.stringify(s))}catch{}
 }
 
-// SAFE SAVE
-function save(state){
+function load(){
   try{
-    localStorage.setItem(KEY, JSON.stringify(state));
-  }catch{}
+    const r=localStorage.getItem(KEY);
+    return r?JSON.parse(r):null;
+  }catch{return null}
+}
+
+function clear(){
+  try{localStorage.removeItem(KEY)}catch{}
 }
 
 function App(){
 
-  // ✅ SAFE INITIAL STATE (CRITICAL FIX)
-  const [state,setState] = useState(()=>{
-    const saved = load();
-    return saved || {
-      lines: [],
-      found: [],
-      solved: [],
-      cur: null,
-      started: false
-    };
-  });
+  const saved = load();
 
-  const [input,setInput] = useState("");
-  const [typing,setTyping] = useState(false);
+  const [lines,setLines]=useState(saved?.lines||[]);
+  const [solved,setSolved]=useState(saved?.solved||[]);
+  const [cur,setCur]=useState(null);
+  const [input,setInput]=useState("");
+  const [typing,setTyping]=useState(false);
 
-  const lockScroll = useRef(false);
-  const bottomRef = useRef(null);
+  // ✅ scroll lock
+  const lockScroll=useRef(false);
+  const bottom=useRef(null);
 
-  // SAVE ONLY WHEN VALID
   useEffect(()=>{
-    if(!state.started) return;
-    save(state);
-  },[state]);
+    if(lines.length>0){
+      save({lines,solved});
+    }
+  },[lines,solved]);
 
-  // SCROLL (SAFE)
+  // ✅ FIX 2: safe scroll
   useEffect(()=>{
     if(lockScroll.current) return;
-    bottomRef.current?.scrollIntoView({behavior:"auto"});
-  },[state.lines.length]);
+    bottom.current?.scrollIntoView({behavior:"auto"});
+  },[lines.length]);
 
-  function type(lines,cb,mode){
+  function type(arr,cb,mode){
     let i=0;
     setTyping(true);
 
     function next(){
-      if(i < lines.length){
-        setState(s=>({...s, lines:[...s.lines, lines[i]]}));
+      if(i<arr.length){
+        setLines(p=>[...p,arr[i]]);
         i++;
-        setTimeout(next, mode==="result" ? 900 : 350);
+
+        // ✅ FIX 3: better pacing
+        let delay = mode==="result"
+          ? 900
+          : (arr[i-1]==="..." ? 600 : arr[i-1].length<12 ? 300 : 500);
+
+        setTimeout(next,delay);
+
       } else {
         setTyping(false);
         if(cb) cb();
@@ -103,32 +95,28 @@ function App(){
     next();
   }
 
-  // INIT (ONLY ONCE, NO RESET BUG)
+  // INIT
   useEffect(()=>{
-    if(state.started) return;
-
-    type([
-      "...",
-      "oh.",
-      "you found it.",
-      "good.",
-      "there are six objects.",
-      "one of you is about to take this too seriously.",
-      "i'm watching for that.",
-      "go."
-    ],()=>{
-      setState(s=>({...s, started:true}));
-    });
-
+    if(lines.length===0){
+      type([
+        "...",
+        "oh.",
+        "you found it.",
+        "good.",
+        "there are six objects.",
+        "one of you is about to take this too seriously.",
+        "i'm watching for that.",
+        "go."
+      ]);
+    }
   },[]);
 
   function select(id){
 
-    // SECRET (SAFE)
-    if(state.solved.includes(id)){
-      lockScroll.current = true;
-
-      setState(s=>({...s, lines:[]}));
+    // secret interaction
+    if(solved.includes(id)){
+      lockScroll.current=true;
+      setLines([]);
 
       type([
         "...",
@@ -137,17 +125,14 @@ function App(){
         "...",
         "don't lose that."
       ],()=>{
-        lockScroll.current = false;
+        lockScroll.current=false;
       },"result");
 
       return;
     }
 
-    setState(s=>({
-      ...s,
-      cur:id,
-      lines:[]
-    }));
+    setCur(id);
+    setLines([]);
 
     type([
       "question:",
@@ -157,17 +142,16 @@ function App(){
 
   function submit(){
 
-    if(!state.cur) return;
+    if(!cur) return;
 
-    lockScroll.current = true;
+    lockScroll.current=true;
 
-    if(input.toLowerCase().includes("wombat")){
+    const answer=input.toLowerCase();
 
-      setState(s=>({
-        ...s,
-        solved:[...s.solved, s.cur],
-        cur:null
-      }));
+    if(answer.includes("wombat")){
+
+      setSolved(p=>[...p,cur]);
+      setCur(null);
 
       type([
         "wombats.",
@@ -175,7 +159,7 @@ function App(){
         "you picked that up and learned this.",
         "...that's your legacy."
       ],()=>{
-        lockScroll.current = false;
+        lockScroll.current=false;
       },"result");
 
     } else {
@@ -184,7 +168,7 @@ function App(){
         "no.",
         "try again."
       ],()=>{
-        lockScroll.current = false;
+        lockScroll.current=false;
       });
     }
 
@@ -192,11 +176,11 @@ function App(){
   }
 
   return e("div",{},
-    state.lines.map((l,i)=>e("div",{key:i},l)),
+    lines.map((l,i)=>e("div",{key:i},l)),
 
     typing && e("div",{},"_"),
 
-    state.cur && !typing && e("div",{},
+    cur && !typing && e("div",{},
       e("input",{
         value:input,
         onChange:e=>setInput(e.target.value)
@@ -210,11 +194,13 @@ function App(){
       )
     ),
 
-    e("div",{ref:bottomRef})
+    e("div",{ref:bottom})
   );
 }
 
 ReactDOM.render(e(App),document.getElementById("root"));
+
+})();
 </script>
 
 </body>
