@@ -18,6 +18,7 @@ button,input {
   border:1px solid #333;
   color:#c8c8c8;
   padding:10px;
+  margin:4px;
 }
 </style>
 
@@ -31,38 +32,69 @@ button,input {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 
 <script>
-const e = React.createElement;
 const {useState,useEffect,useRef} = React;
+const e = React.createElement;
 
-const SK = "hunt_v1";
+const KEY = "hunt_state";
 
-function save(s){localStorage.setItem(SK,JSON.stringify(s))}
-function load(){try{return JSON.parse(localStorage.getItem(SK))}catch{return null}}
+// SAFE LOAD
+function load(){
+  try{
+    const data = localStorage.getItem(KEY);
+    return data ? JSON.parse(data) : null;
+  }catch{
+    return null;
+  }
+}
+
+// SAFE SAVE
+function save(state){
+  try{
+    localStorage.setItem(KEY, JSON.stringify(state));
+  }catch{}
+}
 
 function App(){
 
-  const saved = load();
+  // ✅ SAFE INITIAL STATE (CRITICAL FIX)
+  const [state,setState] = useState(()=>{
+    const saved = load();
+    return saved || {
+      lines: [],
+      found: [],
+      solved: [],
+      cur: null,
+      started: false
+    };
+  });
 
-  const [lines,setLines] = useState(saved?.lines||[]);
-  const [found,setFound] = useState(saved?.found||[]);
-  const [solved,setSolved] = useState(saved?.solved||[]);
-  const [cur,setCur] = useState(null);
   const [input,setInput] = useState("");
   const [typing,setTyping] = useState(false);
 
   const lockScroll = useRef(false);
   const bottomRef = useRef(null);
 
-  function type(arr,cb,mode){
+  // SAVE ONLY WHEN VALID
+  useEffect(()=>{
+    if(!state.started) return;
+    save(state);
+  },[state]);
+
+  // SCROLL (SAFE)
+  useEffect(()=>{
+    if(lockScroll.current) return;
+    bottomRef.current?.scrollIntoView({behavior:"auto"});
+  },[state.lines.length]);
+
+  function type(lines,cb,mode){
     let i=0;
     setTyping(true);
 
     function next(){
-      if(i<arr.length){
-        setLines(p=>[...p,arr[i]]);
-        let delay = mode==="result" ? 900 : 350;
+      if(i < lines.length){
+        setState(s=>({...s, lines:[...s.lines, lines[i]]}));
         i++;
-        setTimeout(next,delay);
+        setTimeout(next, mode==="result" ? 900 : 350);
       } else {
         setTyping(false);
         if(cb) cb();
@@ -71,70 +103,71 @@ function App(){
     next();
   }
 
+  // INIT (ONLY ONCE, NO RESET BUG)
   useEffect(()=>{
-    save({lines,found,solved});
-  },[lines,found,solved]);
+    if(state.started) return;
 
-  useEffect(()=>{
-    if(!bottomRef.current || lockScroll.current) return;
-    bottomRef.current.scrollIntoView({behavior:"auto"});
-  },[lines]);
+    type([
+      "...",
+      "oh.",
+      "you found it.",
+      "good.",
+      "there are six objects.",
+      "one of you is about to take this too seriously.",
+      "i'm watching for that.",
+      "go."
+    ],()=>{
+      setState(s=>({...s, started:true}));
+    });
 
-  // INIT
-  useEffect(()=>{
-    if(lines.length===0){
-      type([
-        "...",
-        "oh.",
-        "you found it.",
-        "good.",
-        "there are six objects.",
-        "one of you is about to take this too seriously.",
-        "i'm watching for that.",
-        "go."
-      ]);
-    }
   },[]);
 
   function select(id){
 
-    // SECRET
-    if(solved.includes(id)){
-      if(!window.secret){
-        window.secret=true;
-        lockScroll.current=true;
+    // SECRET (SAFE)
+    if(state.solved.includes(id)){
+      lockScroll.current = true;
 
-        setLines([]);
-        type([
-          "...",
-          "you came back.",
-          "most people don't.",
-          "...",
-          "don't lose that."
-        ],()=>{
-          lockScroll.current=false;
-        },"result");
+      setState(s=>({...s, lines:[]}));
 
-        return;
-      } else {
-        setLines([]);
-        type(["you already broke it once."],()=>{}, "result");
-        return;
-      }
+      type([
+        "...",
+        "you came back.",
+        "most people don't.",
+        "...",
+        "don't lose that."
+      ],()=>{
+        lockScroll.current = false;
+      },"result");
+
+      return;
     }
 
-    setCur(id);
-    setLines([]);
-    type(["question: what animal poops cubes"]);
+    setState(s=>({
+      ...s,
+      cur:id,
+      lines:[]
+    }));
+
+    type([
+      "question:",
+      "what animal poops cubes"
+    ]);
   }
 
   function submit(){
-    if(!cur) return;
 
-    lockScroll.current=true;
+    if(!state.cur) return;
+
+    lockScroll.current = true;
 
     if(input.toLowerCase().includes("wombat")){
-      setSolved(p=>[...p,cur]);
+
+      setState(s=>({
+        ...s,
+        solved:[...s.solved, s.cur],
+        cur:null
+      }));
 
       type([
         "wombats.",
@@ -142,13 +175,16 @@ function App(){
         "you picked that up and learned this.",
         "...that's your legacy."
       ],()=>{
-        lockScroll.current=false;
-        setCur(null);
+        lockScroll.current = false;
       },"result");
 
     } else {
-      type(["no.","try again."],()=>{
-        lockScroll.current=false;
+
+      type([
+        "no.",
+        "try again."
+      ],()=>{
+        lockScroll.current = false;
       });
     }
 
@@ -156,11 +192,15 @@ function App(){
   }
 
   return e("div",{},
-    lines.map((l,i)=>e("div",{key:i},l)),
-    typing ? e("div",{},"_") : null,
+    state.lines.map((l,i)=>e("div",{key:i},l)),
 
-    cur && !typing && e("div",{},
-      e("input",{value:input,onChange:e=>setInput(e.target.value)}),
+    typing && e("div",{},"_"),
+
+    state.cur && !typing && e("div",{},
+      e("input",{
+        value:input,
+        onChange:e=>setInput(e.target.value)
+      }),
       e("button",{onClick:submit},"submit")
     ),
 
